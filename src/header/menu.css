@@ -1,0 +1,31 @@
+a,
+a:hover,
+a:active,
+a:visited,
+.menuElement div {
+  text-decoration: none;
+  color: white;
+  cursor: pointer;
+}
+
+.menuContainer {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  margin-right: auto;
+  margin-left: 30px;
+}
+
+.menuElement {
+  margin: 5px 10px;
+  height: 25px;
+}
+
+.selectedButton {
+  font-weight: 700;
+}
+
+.separator {
+  width: 150px;
+}

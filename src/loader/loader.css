@@ -1,0 +1,9 @@
+.loaderContainer {
+  width: 100%;
+}
+
+.loader {
+  width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+}

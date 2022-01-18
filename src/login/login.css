@@ -1,0 +1,71 @@
+.loginContainer {
+  margin-left: auto;
+  margin-right: auto;
+  width: 300px;
+  background-color: #3a606e;
+  text-align: center;
+  border-radius: 6px;
+  max-height: 500px;
+  /* transition: max-height 0.3s ease-out; */
+}
+
+.loginContainer.loader {
+  max-height: 320px;
+}
+
+.loginForm {
+  padding: 10px;
+  overflow: hidden;
+}
+
+.loginForm .fields {
+  margin-bottom: 10px;
+}
+
+.loginForm input {
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+  font-size: 13pt;
+  padding: 10px 10px;
+  border-radius: 6px;
+  width: 80%;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  border: none;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+.loginForm button {
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 15px;
+}
+
+.loginForm button.login {
+  margin-bottom: 15px;
+}
+
+.loginForm button.create {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.loginForm input.error {
+  background-color: #febfbf;
+}
+
+.loginForm button.register {
+  margin-top: 30px;
+  margin-bottom: 10px;
+}
+
+.divider {
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  width: 80%;
+  height: 1px;
+  background-color: #607b7d;
+}

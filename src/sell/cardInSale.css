@@ -1,0 +1,97 @@
+.cardInSale {
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  width: 900px;
+  padding: 10px 0;
+}
+
+.cardInSale.border {
+  border-bottom: 1px solid #f16e31;
+}
+
+.cardInSale.inactive {
+  color: #bbb;
+}
+
+.cardInSale .quantity {
+  text-align: center;
+  width: 80px;
+}
+
+.cardInSale .quantity select {
+  padding: 3px 8px;
+  font-size: 10pt;
+  background-color: white;
+}
+
+.cardsInSale .price {
+  width: 100px;
+}
+
+.cardsInSale .price input {
+  padding: 3px 8px;
+  font-size: 10pt;
+  width: 30px;
+}
+
+.cardsInSale .price input.error {
+  background-color: #febfbf;
+}
+
+.cardInSale .name {
+  width: 330px;
+}
+
+.cardInSale .set {
+  text-align: center;
+  width: 50px;
+}
+
+.cardInSale .language {
+  text-align: center;
+  width: 70px;
+}
+
+.cardInSale .condition {
+  text-align: center;
+  width: 60px;
+}
+
+.cardInSale .condition {
+  text-align: center;
+  width: 40px;
+}
+
+.cardInSale .user {
+  width: 200px;
+  text-align: right;
+}
+
+.cardInSale .deleteButton {
+  text-align: center;
+  width: 30px;
+  color: #f16e31;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14pt;
+}
+
+.cardInSale .saleDetails {
+  text-align: center;
+  width: 300px;
+}
+
+.cardInSale .foilIcon {
+  width: 21px;
+  margin-bottom: -5px;
+  margin-left: 7px;
+}
+
+.deleteLoader {
+  width: 41px;
+  margin: -14px;
+}

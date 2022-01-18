@@ -1,0 +1,22 @@
+.sellSelectVersionModal {
+  background-color: #3a606e;
+  width: 550px;
+  top: 100px;
+  margin-left: -195px;
+  color: white;
+  padding: 24px 24px;
+  font-size: 14pt;
+  max-height: 400px;
+  overflow: auto;
+}
+
+.cardsInSale .title {
+  font-size: 14pt;
+  color: #19647e;
+}
+
+.cardsInSale button.finishSale {
+  margin-top: 20px;
+  margin-left: auto;
+  margin-bottom: 20px;
+}
