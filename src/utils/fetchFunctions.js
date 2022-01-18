@@ -18,7 +18,6 @@ export function deleteFromLS(key) {
 // Operations for logging out the user
 export function logout() {
   localStorage.removeItem(process.env.REACT_APP_LS_LOGIN_TOKEN);
-  localStorage.removeItem(process.env.REACT_APP_LS_SUPERUSER);
 }
 
 // Access API

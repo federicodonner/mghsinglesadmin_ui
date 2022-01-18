@@ -1,37 +1,31 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import "./menu.css";
 import { NavLink, useNavigate } from "react-router-dom";
 import texts from "../data/texts";
-import { logout, readFromLS } from "../utils/fetchFunctions";
+import { logout } from "../utils/fetchFunctions";
 
 export default function Menu(props) {
-  const [isSuperuser, setIsSuperuser] = useState(false);
   const navigate = useNavigate();
-
-  // On render, verifies that the user is a superuser
-  useEffect(() => {
-    setIsSuperuser(readFromLS(process.env.REACT_APP_LS_SUPERUSER));
-  }, []);
 
   return (
     <>
       {props.loggedIn && (
         <div className="menuContainer">
           <NavLink
-            to="/collection"
+            to="/sell"
             className={(navData) =>
               navData.isActive ? "selectedButton menuElement" : "menuElement"
             }
           >
-            <div className="label">{texts.MY_COLLECTION}</div>
+            <div className="label">{texts.SELL_CARDS}</div>
           </NavLink>
           <NavLink
-            to="/sales"
+            to="/payment"
             className={(navData) =>
               navData.isActive ? "selectedButton menuElement" : "menuElement"
             }
           >
-            <div className="label">{texts.MY_SALES}</div>
+            <div className="label">{texts.PAYMENT}</div>
           </NavLink>
           <NavLink
             to="/account"
@@ -41,30 +35,6 @@ export default function Menu(props) {
           >
             <div className="label">{texts.MY_ACCOUNT}</div>
           </NavLink>
-          {isSuperuser && (
-            <>
-              <NavLink
-                to="/sell"
-                className={(navData) =>
-                  navData.isActive
-                    ? "selectedButton menuElement"
-                    : "menuElement"
-                }
-              >
-                <div className="label">{texts.SELL_CARDS}</div>
-              </NavLink>
-              <NavLink
-                to="/payment"
-                className={(navData) =>
-                  navData.isActive
-                    ? "selectedButton menuElement"
-                    : "menuElement"
-                }
-              >
-                <div className="label">{texts.PAYMENT}</div>
-              </NavLink>
-            </>
-          )}
           <div className="menuElement logoutButton">
             <div
               onClick={() => {

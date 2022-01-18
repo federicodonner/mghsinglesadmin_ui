@@ -77,6 +77,10 @@ button.light:hover {
   color: #607b7d;
 }
 
+.textButton.white {
+  color: white;
+}
+
 input,
 select {
   padding: 6px 8px;

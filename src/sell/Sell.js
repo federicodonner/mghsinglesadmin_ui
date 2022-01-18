@@ -1,15 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Header from "../header/Header";
 import SellSearchResult from "./SellSearchResult";
 import CardInSale from "./CardInSale";
+import Loader from "../loader/Loader";
 import "./sell.css";
-import {
-  accessAPI,
-  logout,
-  storeInLS,
-  deleteFromLS,
-} from "../utils/fetchFunctions";
+import { accessAPI, logout } from "../utils/fetchFunctions";
 import texts from "../data/texts";
 import whiteLoader from "../images/whiteLoader.svg";
 
@@ -28,37 +24,30 @@ export default function Sell() {
   useEffect(() => {
     accessAPI(
       "GET",
-      "user/me",
+      "admin/me",
       null,
       (response) => {
         // If the response is 200, means the user is logged in
         setLoggedIn(true);
-        // If the user is a superuser, store it in LS
-        if (response.superuser) {
-          storeInLS(process.env.REACT_APP_LS_SUPERUSER, "1");
-        } else {
-          // If the user is logged in but it's not a superuser, navigate out of the section
-          navigate("/");
-          deleteFromLS(process.env.REACT_APP_LS_SUPERUSER);
-        }
       },
       (response) => {
         // If the user is not logged in, turn off the loader
+        logout();
         navigate("/");
       }
     );
-  }, []);
+  }, [navigate]);
 
   // Every time the cards in sale updates, select the search bar
   useEffect(() => {
     // If the number of cards in the sale changed, set the focus
     // This is necesary because the state updates when prices or quantity change
-    if (cardsInSalePreviousLength != cardsInSale.length) {
+    if (cardsInSalePreviousLength !== cardsInSale.length) {
       cardRef.current.focus();
       cardRef.current.select();
     }
     setCardsInSalePreviousLength(cardsInSale.length);
-  }, [cardsInSale]);
+  }, [cardsInSale, cardsInSalePreviousLength]);
 
   // Function triggerd when a card is searched
   function findCard(e) {
@@ -74,7 +63,7 @@ export default function Sell() {
         if (response.cards) {
           setSearchLoader(false);
           // If there is only one card, add it to the sale
-          if (response.cards.length == 1) {
+          if (response.cards.length === 1) {
             var cardsInSaleForEdit = JSON.parse(JSON.stringify(cardsInSale));
             response.cards[0].saleQuantity = 1;
             cardsInSaleForEdit.push(response.cards[0]);
@@ -85,7 +74,7 @@ export default function Sell() {
         }
       },
       (response) => {
-        if (response.status == 404) {
+        if (response.status === 404) {
           alert(response.message);
           setSearchLoader(false);
           cardRef.current.focus();
@@ -156,7 +145,7 @@ export default function Sell() {
 
     accessAPI(
       "POST",
-      "sale",
+      "admin/sale",
       JSON.stringify({ soldCards: cardsInSale }),
       (response) => {
         // If the sale is successful, display a message and refresh
@@ -166,7 +155,12 @@ export default function Sell() {
         setCardsInSale([]);
       },
       (response) => {
-        // If the sale failed for some reason, show the error and return
+        // If there was a login problem, logout the user and take them to login
+        if (response.status === 401 || response.status === 403) {
+          logout();
+          navigate("/");
+        }
+        // If the sale failed for other reason, show the error and return
         // If there is a card indicated in the error, show the name
         alert(
           response.card
@@ -182,7 +176,7 @@ export default function Sell() {
     <div>
       <Header showMenu={true} loggedIn={loggedIn} />
       <div className="content">
-        {loader && <div>This is a loader</div>}
+        {loader && <Loader />}
         {!loader && (
           <>
             <div className="searchContainer">
@@ -193,13 +187,13 @@ export default function Sell() {
                   placeholder={texts.CARD_NAME}
                   disabled={searchLoader || loader}
                 />
+                <button className="dark search" onClick={findCard}>
+                  {searchLoader && (
+                    <img className="loader" src={whiteLoader} alt="loader" />
+                  )}
+                  {!searchLoader && <span>{texts.SEARCH}</span>}
+                </button>
               </form>
-              <button className="orange search" onClick={findCard}>
-                {searchLoader && (
-                  <img className="loader" src={whiteLoader} alt="loader" />
-                )}
-                {!searchLoader && <span>{texts.SEARCH}</span>}
-              </button>
             </div>
             <div className="cardsInSale">
               <div className="title">{texts.CARDS_IN_SALE}</div>
@@ -216,7 +210,7 @@ export default function Sell() {
                 );
               })}
               {cardsInSale.length > 0 && (
-                <button className="orange finishSale" onClick={processSale}>
+                <button className="dark finishSale" onClick={processSale}>
                   {texts.FINISH_SALE}
                 </button>
               )}

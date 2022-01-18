@@ -6,6 +6,8 @@
 
 .paymentFormContainer .title {
   margin-bottom: 10px;
+  font-size: 14pt;
+  color: #3a606e;
 }
 
 .inputContainer {

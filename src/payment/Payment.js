@@ -20,7 +20,7 @@ export default function Payment() {
   useEffect(() => {
     accessAPI(
       "GET",
-      "user/me",
+      "admin/me",
       null,
       (response) => {
         setUser(response);
@@ -47,7 +47,7 @@ export default function Payment() {
         navigate("/login");
       }
     );
-  }, []);
+  }, [navigate]);
 
   // When  the user and the collections are loaded, turn off the loader
   useEffect(() => {
@@ -70,7 +70,7 @@ export default function Payment() {
     setLoader(true);
     accessAPI(
       "POST",
-      "payment",
+      "admin/payment",
       JSON.stringify({
         collectionId: collectionRef.current.value,
         ammount: ammountRef.current.value,
@@ -123,7 +123,7 @@ export default function Payment() {
                   })}
                 </select>
               </div>
-              <button className="orange" onClick={processPayment}>
+              <button className="dark" onClick={processPayment}>
                 {texts.ACCEPT}
               </button>
             </div>

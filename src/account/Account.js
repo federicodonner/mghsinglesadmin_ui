@@ -25,7 +25,7 @@ export default function Account() {
   useEffect(() => {
     accessAPI(
       "GET",
-      "user/me",
+      "admin/me",
       null,
       (response) => {
         setUserDetails(response);
@@ -38,7 +38,7 @@ export default function Account() {
         navigate("/login");
       }
     );
-  }, []);
+  }, [navigate]);
 
   // Update name and email
   function updateDetails() {
@@ -117,7 +117,6 @@ export default function Account() {
         {loader && <Loader />}
         {!loader && (
           <>
-            <div className="moneyAndStats">Stats</div>
             <div className="editDetails">
               <div className="title">{texts.UPDATE_DETAILS}</div>
               <div className="detailFields">
@@ -139,10 +138,7 @@ export default function Account() {
                     disabled={updateDetailsLoader}
                   />
                 </div>
-                <button
-                  className="orange updateDetails"
-                  onClick={updateDetails}
-                >
+                <button className="dark updateDetails" onClick={updateDetails}>
                   {updateDetailsLoader && (
                     <img className="loader" src={whiteLoader} alt="loader" />
                   )}
@@ -168,7 +164,7 @@ export default function Account() {
                   />
                 </div>
               </div>
-              <button className="orange updateDetails" onClick={updatePassword}>
+              <button className="dark updateDetails" onClick={updatePassword}>
                 {updatePasswordLoader && (
                   <img className="loader" src={whiteLoader} alt="loader" />
                 )}
