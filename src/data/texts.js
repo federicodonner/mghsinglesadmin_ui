@@ -52,6 +52,7 @@ const texts = {
   CARDS_AVAILABLE_IN_STORE: "Cartas disponibles en la tienda",
   UPDATE_DETAILS: "Actualiza tus datos",
   UPDATE_PASSWORD: "Actualiza tu contraseña",
+  UPDATED_DETAILS: "Tus datos han sido actualizados.",
   CURRENT_PASSWORD: "Contraseña actual",
   NEW_PASSWORD: "Nueva contraseña",
   PAYMENT_TITLE: "Registrar un pago",

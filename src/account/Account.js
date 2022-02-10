@@ -9,7 +9,7 @@ import whiteLoader from "../images/whiteLoader.svg";
 
 export default function Account() {
   const [loader, setLoader] = useState(true);
-  const [userDetails, setUserDetails] = useState(null);
+  const [playerDetails, setPlayerDetails] = useState(null);
 
   const [updateDetailsLoader, setUpdateDetailsLoader] = useState(false);
   const [updatePasswordLoader, setUpdatePasswordLoader] = useState(false);
@@ -21,18 +21,18 @@ export default function Account() {
 
   const navigate = useNavigate();
 
-  // On load, fetch user data
+  // On load, fetch player data
   useEffect(() => {
     accessAPI(
       "GET",
       "admin/me",
       null,
       (response) => {
-        setUserDetails(response);
+        setPlayerDetails(response);
         setLoader(false);
       },
       (response) => {
-        // If there is a problem with the user, sign them out and navigate to login
+        // If there is a problem with the player, sign them out and navigate to login
         alert(response.message);
         logout();
         navigate("/login");
@@ -60,18 +60,22 @@ export default function Account() {
     setUpdateDetailsLoader(true);
     accessAPI(
       "PUT",
-      "user",
+      "player",
       JSON.stringify(data),
       (response) => {
-        setUserDetails(response);
+        setPlayerDetails(response);
         newNameRef.current.value = null;
         newEmailRef.current.value = null;
         setUpdateDetailsLoader(false);
+        alert(texts.UPDATED_DETAILS);
       },
       (response) => {
         alert(response.message);
-        logout();
-        navigate("/login");
+        setUpdateDetailsLoader(false);
+        if (response.status === 401 || response.status === 403) {
+          logout();
+          navigate("/login");
+        }
       }
     );
   }
@@ -86,7 +90,7 @@ export default function Account() {
     setUpdatePasswordLoader(true);
     accessAPI(
       "PUT",
-      "user/password",
+      "player/password",
       JSON.stringify({
         password: passwordRef.current.value,
         newPassword: newPasswordRef.current.value,
@@ -125,7 +129,7 @@ export default function Account() {
                   <input
                     type="text"
                     ref={newNameRef}
-                    placeholder={userDetails.name}
+                    placeholder={playerDetails.name}
                     disabled={updateDetailsLoader}
                   />
                 </div>
@@ -134,7 +138,7 @@ export default function Account() {
                   <input
                     type="text"
                     ref={newEmailRef}
-                    placeholder={userDetails.email}
+                    placeholder={playerDetails.email}
                     disabled={updateDetailsLoader}
                   />
                 </div>

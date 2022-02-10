@@ -22,7 +22,7 @@ export default function Login() {
   useEffect(() => {
     accessAPI(
       "GET",
-      "user/me",
+      "player/me",
       null,
       (response) => {
         // If the response is 200, means the user is logged in

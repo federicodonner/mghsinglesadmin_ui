@@ -1,23 +1,33 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Header from "../header/Header";
 import Loader from "../loader/Loader";
 import { useNavigate } from "react-router-dom";
 import "./home.css";
 import { accessAPI, logout } from "../utils/fetchFunctions";
-import texts from "../data/texts";
 
 export default function Home() {
   const [loader, setLoader] = useState(true);
-  const [user, setUser] = useState(null);
-  const [collections, setCollections] = useState([]);
+  const [player, setPlayer] = useState(null);
 
   const navigate = useNavigate();
 
-  const ammountRef = useRef(null);
-  const collectionRef = useRef(null);
-
-  // On load, fetch user data
-  useEffect(() => {}, []);
+  // On load, verify that the user is logged in, if it is, turn off the loader
+  // if not, redirect to login
+  useEffect(() => {
+    accessAPI(
+      "GET",
+      "admin/me",
+      null,
+      (response) => {
+        setPlayer(response);
+        setLoader(false);
+      },
+      (response) => {
+        logout();
+        navigate("login");
+      }
+    );
+  }, [navigate]);
 
   return (
     <div>
@@ -26,7 +36,7 @@ export default function Home() {
         {loader && <Loader />}
         {!loader && (
           <>
-            <div className="">Home</div>
+            <div className="">{player.name}</div>
           </>
         )}
       </div>

@@ -67,8 +67,10 @@ export default function Sell() {
             var cardsInSaleForEdit = JSON.parse(JSON.stringify(cardsInSale));
             response.cards[0].saleQuantity = 1;
             cardsInSaleForEdit.push(response.cards[0]);
+            console.log(cardsInSaleForEdit);
             setCardsInSale(cardsInSaleForEdit);
           } else {
+            console.log(response.cards);
             setSearchResults(response.cards);
           }
         }

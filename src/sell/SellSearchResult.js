@@ -11,13 +11,13 @@ export default function SellSearchResult(props) {
       }}
     >
       <div className="cardName">
-        {props.card.cardName}
+        {props.card.cardname}
         {props.card.foil == 1 && (
           <img className="foilIcon" src={foilIcon} alt="foil" />
         )}
       </div>
       <div className="versionDetails">
-        <span className="set">{props.card.cardSet.toUpperCase()}</span>
+        <span className="set">{props.card.cardset.toUpperCase()}</span>
         <span className="condition">{props.card.condition}</span>
         <span className="language">{props.card.language}</span>
         <span className="user">{props.card.user}</span>

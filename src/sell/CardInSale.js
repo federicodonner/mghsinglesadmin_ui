@@ -32,9 +32,9 @@ export default function CardInSale(props) {
     <div className={props.showBorder ? "cardInSale border" : "cardInSale"}>
       <div className="name">
         <span>
-          {props.card.cardName.indexOf(" // ") === -1
-            ? props.card.cardName
-            : props.card.cardName.split(" // ")[0]}
+          {props.card.cardname.indexOf(" // ") === -1
+            ? props.card.cardname
+            : props.card.cardname.split(" // ")[0]}
         </span>
         {props.card.foil == 1 && (
           <span>
@@ -42,7 +42,7 @@ export default function CardInSale(props) {
           </span>
         )}
       </div>
-      <div className="set">{props.card.cardSet.toUpperCase()}</div>
+      <div className="set">{props.card.cardset.toUpperCase()}</div>
       <div className="language">{props.card.language}</div>
       <div className="condition">{props.card.condition}</div>
       <div className="user">{props.card.user}</div>

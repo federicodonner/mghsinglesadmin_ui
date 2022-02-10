@@ -39,7 +39,7 @@ export default function Menu(props) {
             <div
               onClick={() => {
                 logout();
-                navigate("/");
+                navigate("/login");
               }}
             >
               {texts.LOGOUT}

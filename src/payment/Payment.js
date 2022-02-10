@@ -8,7 +8,7 @@ import texts from "../data/texts";
 
 export default function Payment() {
   const [loader, setLoader] = useState(true);
-  const [user, setUser] = useState(null);
+  const [player, setPlayer] = useState(null);
   const [collections, setCollections] = useState([]);
 
   const navigate = useNavigate();
@@ -16,17 +16,17 @@ export default function Payment() {
   const ammountRef = useRef(null);
   const collectionRef = useRef(null);
 
-  // On load, fetch user data
+  // On load, fetch player data
   useEffect(() => {
     accessAPI(
       "GET",
       "admin/me",
       null,
       (response) => {
-        setUser(response);
+        setPlayer(response);
       },
       (response) => {
-        // If there is a problem with the user, sign them out and navigate to login
+        // If there is a problem with the player, sign them out and navigate to login
         alert(response.message);
         logout();
         navigate("/login");
@@ -41,7 +41,7 @@ export default function Payment() {
         setCollections(response);
       },
       (response) => {
-        // If there is a problem with the user, sign them out and navigate to login
+        // If there is a problem with the player, sign them out and navigate to login
         alert(response.message);
         logout();
         navigate("/login");
@@ -49,16 +49,16 @@ export default function Payment() {
     );
   }, [navigate]);
 
-  // When  the user and the collections are loaded, turn off the loader
+  // When  the player and the collections are loaded, turn off the loader
   useEffect(() => {
-    if (user && collections) {
+    if (player && collections) {
       setLoader(false);
     }
-  }, [user, collections]);
+  }, [player, collections]);
 
   // Function tiggered by the process payment button
   function processPayment() {
-    // Verifies that the user selected something
+    // Verifies that the player selected something
     if (
       !ammountRef.current.value ||
       !collectionRef.current.value ||
@@ -80,7 +80,7 @@ export default function Payment() {
         setLoader(false);
       },
       (response) => {
-        // If there is a problem with the user, sign them out and navigate to login
+        // If there is a problem with the player, sign them out and navigate to login
         alert(response.message);
         logout();
         navigate("/login");
