@@ -20,7 +20,7 @@ export default function SellSearchResult(props) {
         <span className="set">{props.card.cardset.toUpperCase()}</span>
         <span className="condition">{props.card.condition}</span>
         <span className="language">{props.card.language}</span>
-        <span className="user">{props.card.user}</span>
+        <span className="user">{props.card.player}</span>
       </div>
       <div className="divider"></div>
     </div>

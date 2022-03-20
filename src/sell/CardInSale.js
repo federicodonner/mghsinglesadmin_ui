@@ -45,7 +45,7 @@ export default function CardInSale(props) {
       <div className="set">{props.card.cardset.toUpperCase()}</div>
       <div className="language">{props.card.language}</div>
       <div className="condition">{props.card.condition}</div>
-      <div className="user">{props.card.user}</div>
+      <div className="user">{props.card.player}</div>
       <div className="quantity">
         <select
           name="quantity"
