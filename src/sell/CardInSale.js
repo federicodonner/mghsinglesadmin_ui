@@ -42,7 +42,8 @@ export default function CardInSale(props) {
           </span>
         )}
       </div>
-      <div className="set">{props.card.cardset.toUpperCase()}</div>
+      {/* The set code column is `cardsetcode`; `cardset` is the relation. */}
+      <div className="set">{(props.card.cardsetcode ?? "").toUpperCase()}</div>
       <div className="language">{props.card.language}</div>
       <div className="condition">{props.card.condition}</div>
       <div className="user">{props.card.player}</div>
