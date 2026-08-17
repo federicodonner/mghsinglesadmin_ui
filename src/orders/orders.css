@@ -254,3 +254,61 @@ button.small {
   font-size: 0.85em;
   margin-bottom: 10px;
 }
+
+/* ---- wishlist matches ------------------------------------------------ */
+.matchBadge {
+  background: #c0392b;
+  color: #fff;
+  border-radius: 11px;
+  padding: 2px 9px;
+  font-size: 0.85em;
+  font-weight: bold;
+}
+
+.ordersHeadSpaced {
+  margin-top: 36px;
+}
+
+.matchCard {
+  border: 1px solid #dfe4e6;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.matchPlayer {
+  font-weight: bold;
+  color: #33586b;
+  margin-bottom: 6px;
+}
+
+.matchRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  border-top: 1px solid #f0f0f0;
+}
+
+.matchThumb {
+  width: 34px;
+  border-radius: 3px;
+  display: block;
+}
+
+.matchKind {
+  font-size: 0.75em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 3px;
+  color: #fff;
+}
+
+.matchKind.purchase {
+  background: #33586b;
+}
+
+/* The customer's own card: it goes in the bag, but nothing is charged. */
+.matchKind.withdrawal {
+  background: #7b5e2a;
+}

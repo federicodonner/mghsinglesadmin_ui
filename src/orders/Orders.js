@@ -26,6 +26,7 @@ export default function Orders() {
   const [loader, setLoader] = useState(true);
   const [orders, setOrders] = useState([]);
   const [demand, setDemand] = useState([]);
+  const [matches, setMatches] = useState([]);
   const [pendingOnly, setPendingOnly] = useState(true);
 
   const navigate = useNavigate();
@@ -49,6 +50,13 @@ export default function Orders() {
     );
     accessAPI(
       "GET",
+      "admin/match",
+      null,
+      (response) => setMatches(response),
+      () => setMatches([])
+    );
+    accessAPI(
+      "GET",
       "admin/wishlist",
       null,
       (response) => setDemand(response),
@@ -60,6 +68,17 @@ export default function Orders() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function actOnMatch(match, action, confirmText) {
+    if (confirmText && !window.confirm(confirmText)) return;
+    accessAPI(
+      "POST",
+      `admin/match/${match.id}/${action}`,
+      null,
+      () => load(),
+      (response) => alert(response.message)
+    );
+  }
 
   function act(order, action, confirmText) {
     if (confirmText && !window.confirm(confirmText)) return;
@@ -82,7 +101,83 @@ export default function Orders() {
       {loader && <Loader color="blue" />}
       {!loader && (
         <div className="ordersContainer">
+          {/* Placed above the order queue deliberately: this is the work the
+              shop would otherwise never notice, since a match appears without
+              anyone doing anything. */}
           <div className="ordersHead">
+            <span className="title">{texts.MATCHES_TITLE}</span>
+            {matches.length > 0 && (
+              <span className="matchBadge">
+                {matches.reduce((n, p) => n + p.matches.length, 0)}
+              </span>
+            )}
+          </div>
+          <div className="demandHint">{texts.MATCHES_HINT}</div>
+          {!matches.length && (
+            <div className="emptyState">{texts.NO_MATCHES}</div>
+          )}
+          {matches.map((person) => (
+            <div className="matchCard" key={person.playerid}>
+              <div className="matchPlayer">
+                {texts.BAG_FOR} {person.name}
+              </div>
+              {person.matches.map((match) => (
+                <div className="matchRow" key={match.id}>
+                  {match.image && (
+                    <img className="matchThumb" src={match.image} alt={match.name} />
+                  )}
+                  <span className="lineName">{match.name}</span>
+                  <span className="lineSet">
+                    {(match.cardsetcode ?? "").toUpperCase()}
+                  </span>
+                  <span className="lineMeta">{match.condition}</span>
+                  <span className="lineMeta">{match.language}</span>
+                  {isFoil(match.variant) && (
+                    <span className="lineMeta">{finishLabel(match.variant)}</span>
+                  )}
+                  {/* A withdrawal is the customer's own consigned card: it goes
+                      in the bag but nothing is charged for it. */}
+                  <span
+                    className={
+                      match.kind === "withdrawal"
+                        ? "matchKind withdrawal"
+                        : "matchKind purchase"
+                    }
+                    title={
+                      match.kind === "withdrawal"
+                        ? texts.MATCH_WITHDRAWAL_HINT
+                        : undefined
+                    }
+                  >
+                    {match.kind === "withdrawal"
+                      ? texts.MATCH_WITHDRAWAL
+                      : texts.MATCH_PURCHASE}
+                  </span>
+                  <span className="linePrice">
+                    {match.kind === "withdrawal"
+                      ? "—"
+                      : `U$S ${match.price ?? "?"}`}
+                  </span>
+                  <button
+                    className="dark small"
+                    onClick={() => actOnMatch(match, "setaside")}
+                  >
+                    {texts.SET_ASIDE}
+                  </button>
+                  <button
+                    className="light small"
+                    onClick={() =>
+                      actOnMatch(match, "dismiss", texts.CONFIRM_DISMISS_MATCH)
+                    }
+                  >
+                    {texts.DISMISS_MATCH}
+                  </button>
+                </div>
+              ))}
+            </div>
+          ))}
+
+          <div className="ordersHead ordersHeadSpaced">
             <span className="title">{texts.ORDERS_TITLE}</span>
             <button
               className="light small"
