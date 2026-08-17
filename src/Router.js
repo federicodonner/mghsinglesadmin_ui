@@ -9,6 +9,7 @@ import Storage from "./storage/Storage";
 import StorageDetail from "./storage/StorageDetail";
 import Find from "./storage/Find";
 import Orders from "./orders/Orders";
+import Pricing from "./pricing/Pricing";
 
 class Router extends React.Component {
   render() {
@@ -23,6 +24,7 @@ class Router extends React.Component {
         <Route path="/storage/:storageId" element={<StorageDetail />} />
         <Route path="/find" element={<Find />} />
         <Route path="/orders" element={<Orders />} />
+        <Route path="/pricing" element={<Pricing />} />
         <Route path="*" element={<Home />} />
       </Routes>
     );

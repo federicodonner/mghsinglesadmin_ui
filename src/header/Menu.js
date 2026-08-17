@@ -44,6 +44,14 @@ export default function Menu(props) {
             <div className="label">{texts.STORAGE}</div>
           </NavLink>
           <NavLink
+            to="/pricing"
+            className={(navData) =>
+              navData.isActive ? "selectedButton menuElement" : "menuElement"
+            }
+          >
+            <div className="label">{texts.PRICING}</div>
+          </NavLink>
+          <NavLink
             to="/payment"
             className={(navData) =>
               navData.isActive ? "selectedButton menuElement" : "menuElement"
