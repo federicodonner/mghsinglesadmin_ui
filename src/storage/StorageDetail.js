@@ -75,7 +75,7 @@ export default function StorageDetail() {
             <span className="storageOwner">
               {unit.owner ? unit.owner.name : texts.SHOP}
             </span>
-            {!unit.inshop && (
+            {!unit.forsale && (
               <span className="awayWarning">{texts.NOT_IN_SHOP_WARNING}</span>
             )}
           </div>

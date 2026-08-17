@@ -12,6 +12,25 @@ const TYPE_LABELS = {
   unsorted_box: texts.UNSORTED_BOX,
 };
 
+const STATE_LABELS = {
+  for_sale: texts.STATE_FOR_SALE,
+  retired: texts.STATE_RETIRED,
+  released: texts.STATE_RELEASED,
+  returning: texts.STATE_RETURNING,
+};
+
+// The label for a move depends on where it starts, not just where it lands:
+// retired -> for_sale is cancelling a retirement, returning -> for_sale is
+// taking delivery. The API decides which moves are offered (`cando`); this only
+// names them.
+function moveLabel(from, to) {
+  if (to === "released") return texts.DO_RELEASE;
+  if (to === "for_sale") {
+    return from === "retired" ? texts.DO_CANCEL_RETIRE : texts.DO_ACCEPT;
+  }
+  return to;
+}
+
 export default function Storage() {
   const [loader, setLoader] = useState(true);
   const [units, setUnits] = useState([]);
@@ -77,12 +96,29 @@ export default function Storage() {
     );
   }
 
-  function toggleInShop(unit) {
+  // Hand a customer's container along its lifecycle. Releasing it is the only
+  // move with a consequence worth reporting: copies already promised to a buyer
+  // stay behind on the counter, so whoever hands the binder over has to know
+  // not to put them in it.
+  function move(unit, to) {
     accessAPI(
-      "PUT",
-      `storage/${unit.id}`,
-      { inshop: !unit.inshop },
-      () => load(),
+      "POST",
+      `storage/${unit.id}/state`,
+      { state: to },
+      (response) => {
+        if (to === "released") {
+          const held = response.heldback || [];
+          alert(
+            held.length
+              ? `${texts.HELD_BACK}\n` +
+                  held
+                    .map((c) => `- ${c.name} (#${c.copyindex})`)
+                    .join("\n")
+              : texts.NOTHING_HELD_BACK
+          );
+        }
+        load();
+      },
       (response) => alert(response.message)
     );
   }
@@ -145,7 +181,7 @@ export default function Storage() {
             <div className="title">{texts.STORAGE_TITLE}</div>
             {units.map((unit) => (
               <div
-                className={unit.inshop ? "storageRow" : "storageRow away"}
+                className={unit.forsale ? "storageRow" : "storageRow away"}
                 key={unit.id}
               >
                 <Link to={`/storage/${unit.id}`} className="storageName">
@@ -158,23 +194,35 @@ export default function Storage() {
                 <span className="storageCount">
                   {unit.cardcount} {texts.CARDS}
                 </span>
-                {/* Only a customer's container can leave the shop. */}
-                {unit.owner ? (
+                <span className="storageBadge">
+                  {STATE_LABELS[unit.state]}
+                </span>
+                {/* Only a customer's container moves, and only along the moves
+                    the API says the shop may make from here. */}
+                {(unit.cando || []).map((to) => (
                   <button
-                    className={unit.inshop ? "light small" : "dark small"}
-                    onClick={() => toggleInShop(unit)}
+                    key={to}
+                    className="dark small"
+                    onClick={() => move(unit, to)}
                   >
-                    {unit.inshop ? texts.IN_SHOP : texts.WITH_CUSTOMER}
+                    {moveLabel(unit.state, to)}
                   </button>
-                ) : (
-                  <span className="storageBadge">{texts.IN_SHOP}</span>
+                ))}
+                {/* The shop can only rename or delete what it physically
+                    holds — a released container is the customer's. */}
+                {unit.inshop !== false && (
+                  <>
+                    <button className="light small" onClick={() => rename(unit)}>
+                      {texts.RENAME}
+                    </button>
+                    <button
+                      className="light small"
+                      onClick={() => removeUnit(unit)}
+                    >
+                      {texts.DELETE}
+                    </button>
+                  </>
                 )}
-                <button className="light small" onClick={() => rename(unit)}>
-                  {texts.RENAME}
-                </button>
-                <button className="light small" onClick={() => removeUnit(unit)}>
-                  {texts.DELETE}
-                </button>
               </div>
             ))}
           </div>

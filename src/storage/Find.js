@@ -104,7 +104,7 @@ export default function Find() {
                 <span className="storageOwner">
                   {hit.storage.owner ?? texts.SHOP}
                 </span>
-                {!hit.storage.inshop && (
+                {hit.storage.state !== "for_sale" && (
                   <span className="awayWarning">
                     {texts.NOT_IN_SHOP_WARNING}
                   </span>

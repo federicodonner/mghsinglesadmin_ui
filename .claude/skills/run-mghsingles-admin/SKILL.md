@@ -137,11 +137,30 @@ npm start
 ```
 
 Same `react-scripts start` as above with CRA's defaults: opens a real browser at
-`http://localhost:3000` and expects the API on `:3001` (from `.env.development`).
+`http://localhost:3000` and expects the API on `:3101` (from `.env.development`).
 Note that **the customer UI defaults to the same port** — run only one of them
 without a `PORT` override.
 
 ## Gotchas
+
+- **`/storage` shows every container and the shop's half of the lifecycle.** A
+  customer's container carries a state badge (`En venta`, `Retirado por el
+  dueño`, `Entregado`, `Lo está trayendo`) and the moves the shop may make from
+  it, drawn from the `cando` array the API returns. Only two exist: taking
+  delivery of one the customer is bringing in, and handing over one they
+  retired — plus cancelling a retirement. A `released` container offers nothing
+  at all, not even rename or delete: it is physically in the customer's living
+  room, so the API refuses those too.
+
+  "Entregar al dueño" pops an `alert` listing copies that stay behind because
+  they are already in a buyer's pick-up bag. Stub `window.alert` before clicking
+  it headless, then read the buffer:
+
+  ```
+  eval window.__alerts = []; window.alert = (m) => window.__alerts.push(m); window.confirm = () => true; 'ok'
+  clicktext Entregar al dueño
+  eval window.__alerts
+  ```
 
 - **The localStorage key differs from the customer app**: `mghsinglesAdminToken`,
   not `mghsinglesToken` (`.env` → `REACT_APP_LS_LOGIN_TOKEN`). The two apps
