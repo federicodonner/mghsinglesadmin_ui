@@ -27,6 +27,10 @@ export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [demand, setDemand] = useState([]);
   const [matches, setMatches] = useState([]);
+  // Where the cards from a just-cancelled bag have to go back to.
+  const [refile, setRefile] = useState(null);
+  // Which copy the shop is taking, per match, when there is more than one.
+  const [chosen, setChosen] = useState({});
   const [pendingOnly, setPendingOnly] = useState(true);
 
   const navigate = useNavigate();
@@ -74,10 +78,27 @@ export default function Orders() {
     accessAPI(
       "POST",
       `admin/match/${match.id}/${action}`,
-      null,
+      // Tell the API which copy was physically taken, so a later cancellation
+      // refiles it where it actually came from.
+      action === "setaside" && chosen[match.id]
+        ? { placementid: chosen[match.id] }
+        : null,
       () => load(),
       (response) => alert(response.message)
     );
+  }
+
+  // One line of "where the card is", in the terms that container supports.
+  function locationLabel(location) {
+    if (location.storagetype === "binder") {
+      return `${location.storagename} — ${texts.PAGE} ${location.page}, ${texts.IN_POCKET} ${location.pocket}${
+        location.depth > 1 ? ` (${texts.DEPTH} ${location.depth})` : ""
+      }`;
+    }
+    if (location.storagetype === "sorted_box") {
+      return `${location.storagename} — ${texts.POSITION_IN_BOX} ${location.sequence}`;
+    }
+    return location.storagename;
   }
 
   function act(order, action, confirmText) {
@@ -86,7 +107,13 @@ export default function Orders() {
       "POST",
       `admin/order/${order.id}/${action}`,
       null,
-      () => load(),
+      (response) => {
+        // Cancelling empties a bag, so say where each card goes back. Shown as
+        // a panel rather than an alert, which would be dismissed and lost
+        // before anyone had walked to the shelf.
+        if (response?.refile?.length) setRefile(response.refile);
+        load();
+      },
       (response) => alert(response.message)
     );
   }
@@ -122,7 +149,8 @@ export default function Orders() {
                 {texts.BAG_FOR} {person.name}
               </div>
               {person.matches.map((match) => (
-                <div className="matchRow" key={match.id}>
+                <div className="matchBlock" key={match.id}>
+                <div className="matchRow">
                   {match.image && (
                     <img className="matchThumb" src={match.image} alt={match.name} />
                   )}
@@ -173,9 +201,64 @@ export default function Orders() {
                     {texts.DISMISS_MATCH}
                   </button>
                 </div>
+
+                {/* Where to actually go and get this one. Two rows can share a
+                    card name, so this has to sit with its own row. */}
+                <div className="matchWhere">
+                  <span className="matchWhereLabel">{texts.WHERE_IS_IT}:</span>
+                  {!match.locations.length && (
+                    <span className="matchNoLocation">{texts.NO_LOCATION}</span>
+                  )}
+                  {match.locations.length === 1 && (
+                    <span>{locationLabel(match.locations[0])}</span>
+                  )}
+                  {/* Several copies on the shelf: the shop says which one they
+                      took, so a cancellation refiles the right one. */}
+                  {match.locations.length > 1 && (
+                    <select
+                      value={chosen[match.id] ?? match.locations[0].placementid}
+                      onChange={(e) =>
+                        setChosen({
+                          ...chosen,
+                          [match.id]: parseInt(e.target.value, 10),
+                        })
+                      }
+                    >
+                      {match.locations.map((location) => (
+                        <option
+                          value={location.placementid}
+                          key={location.placementid}
+                        >
+                          {locationLabel(location)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+                </div>
               ))}
             </div>
           ))}
+
+          {/* Left on screen until dismissed: it is a physical to-do. */}
+          {refile && (
+            <div className="refilePanel">
+              <div className="refileTitle">{texts.REFILE_TITLE}</div>
+              <div className="demandHint">{texts.REFILE_HINT}</div>
+              {refile.map((item) => (
+                <div className="refileRow" key={item.placementid}>
+                  <span className="lineName">{item.name}</span>
+                  <span className="lineSet">
+                    {(item.cardsetcode ?? "").toUpperCase()}
+                  </span>
+                  <span className="refileWhere">{locationLabel(item)}</span>
+                </div>
+              ))}
+              <button className="dark small" onClick={() => setRefile(null)}>
+                {texts.REFILE_DONE}
+              </button>
+            </div>
+          )}
 
           <div className="ordersHead ordersHeadSpaced">
             <span className="title">{texts.ORDERS_TITLE}</span>

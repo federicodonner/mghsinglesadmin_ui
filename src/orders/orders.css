@@ -312,3 +312,56 @@ button.small {
 .matchKind.withdrawal {
   background: #7b5e2a;
 }
+
+/* ---- where the card is / where it goes back -------------------------- */
+.matchBlock {
+  border-top: 1px solid #f0f0f0;
+}
+
+.matchBlock .matchRow {
+  border-top: none;
+}
+
+.matchWhere {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 0 0 8px 46px;
+  font-size: 0.9em;
+  color: #555;
+}
+
+.matchWhereLabel {
+  color: #90a4ae;
+}
+
+.matchNoLocation {
+  color: #c0392b;
+}
+
+.refilePanel {
+  border: 2px solid #c0392b;
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 16px 0;
+  background: #fdf3f2;
+}
+
+.refileTitle {
+  font-weight: bold;
+  color: #c0392b;
+  margin-bottom: 4px;
+}
+
+.refileRow {
+  display: flex;
+  gap: 14px;
+  padding: 5px 0;
+  border-top: 1px solid #f3dedc;
+}
+
+.refileWhere {
+  margin-left: auto;
+  color: #33586b;
+}
