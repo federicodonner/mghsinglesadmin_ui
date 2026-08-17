@@ -110,6 +110,9 @@ const texts = {
   WANTED_BY: "Buscada por",
   IN_STOCK_COUNT: "En stock",
   NO_DEMAND: "Ningún cliente tiene cartas en su lista de deseados.",
+  VARIANT_nonfoil: "Normal",
+  VARIANT_foil: "Foil",
+  VARIANT_etched: "Foil etched",
   UNSATISFIED: "Sin cubrir",
   SATISFIED: "Cubierta",
   DEMAND_HINT:
