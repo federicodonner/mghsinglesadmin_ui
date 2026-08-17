@@ -33,7 +33,13 @@ export function accessAPI(verb, endpoint, data, callbackSuccess, callbackFail) {
       Authorization: "Bearer " + accessToken,
       "Content-Type": "application/json",
     },
-    body: data,
+    // Callers historically passed a pre-stringified body, so a plain object
+    // was silently coerced to "[object Object]" and the API rejected it as
+    // malformed JSON. Accept either.
+    body:
+      data === null || data === undefined || typeof data === "string"
+        ? data
+        : JSON.stringify(data),
   };
   Promise.race([
     // Generate two promies, one with the fecth and the other with the timeout

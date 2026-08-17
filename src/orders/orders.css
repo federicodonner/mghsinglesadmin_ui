@@ -1,0 +1,250 @@
+.ordersContainer {
+  width: 90%;
+  max-width: 900px;
+  margin: 0 auto 60px;
+}
+
+.ordersContainer .title {
+  font-size: 1.3em;
+  color: #33586b;
+  margin: 20px 0 12px;
+}
+
+.emptyState {
+  color: #777;
+  margin: 20px 0;
+}
+
+/* ---- orders ---------------------------------------------------------- */
+.orderCard {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+
+/* A closed order is still readable but visibly no longer live. */
+.orderCard.cancelled,
+.orderCard.expired {
+  opacity: 0.6;
+}
+
+.orderHeader {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.orderStatus {
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 3px;
+  color: #fff;
+  background: #9e9e9e;
+}
+
+.orderStatus.pending {
+  background: #33586b;
+}
+
+.orderStatus.completed {
+  background: #2e7d32;
+}
+
+.orderDate,
+.orderExpires {
+  color: #777;
+  font-size: 0.9em;
+}
+
+.orderTotal {
+  margin-left: auto;
+  font-weight: bold;
+}
+
+.orderNote {
+  color: #555;
+  font-style: italic;
+  margin-bottom: 8px;
+}
+
+.orderLine {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 0;
+  border-top: 1px solid #f0f0f0;
+}
+
+.lineQuantity {
+  min-width: 26px;
+  color: #777;
+  font-variant-numeric: tabular-nums;
+}
+
+.lineName {
+  flex: 1 1 180px;
+}
+
+.lineSet {
+  min-width: 56px;
+  color: #33586b;
+  font-size: 0.85em;
+}
+
+.lineMeta {
+  color: #777;
+  font-size: 0.85em;
+}
+
+.linePrice {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.pickupNote {
+  margin-top: 8px;
+  color: #777;
+  font-size: 0.85em;
+}
+
+button.small {
+  padding: 3px 10px;
+  font-size: 0.85em;
+}
+
+/* ---- wishlist -------------------------------------------------------- */
+.wishlistForm {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.wishlistForm input {
+  flex: 1 1 260px;
+  padding: 8px;
+  border: 1px solid #b5b5b5;
+  border-radius: 4px;
+}
+
+.wishlistRow {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+}
+
+.wishlistHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wishlistName {
+  flex: 1 1 auto;
+  font-weight: bold;
+}
+
+.stockBadge {
+  font-size: 0.75em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 3px;
+  color: #fff;
+}
+
+.stockBadge.in {
+  background: #2e7d32;
+}
+
+.stockBadge.out {
+  background: #9e9e9e;
+}
+
+.wishlistStock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 0;
+  border-top: 1px solid #f0f0f0;
+  margin-top: 6px;
+}
+
+/* ---- reserve control on a store card --------------------------------- */
+.reserveRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.reserveRow select {
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.reservedNote,
+.soldOut {
+  font-size: 0.85em;
+  opacity: 0.85;
+}
+
+/* ---- shop-only additions --------------------------------------------- */
+.ordersHead {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.orderPlayer {
+  font-weight: bold;
+}
+
+.orderActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.demandTitle {
+  margin-top: 36px;
+}
+
+.demandRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 4px;
+  border-bottom: 1px solid #eee;
+}
+
+.demandName {
+  flex: 1 1 200px;
+  font-weight: bold;
+}
+
+.demandCount,
+.demandWanters {
+  color: #666;
+  font-size: 0.9em;
+}
+
+.demandStock {
+  font-size: 0.8em;
+  padding: 3px 8px;
+  border-radius: 3px;
+  color: #fff;
+}
+
+.demandStock.in {
+  background: #2e7d32;
+}
+
+/* Wanted but not stocked — the interesting case for a buyer. */
+.demandStock.out {
+  background: #c0392b;
+}

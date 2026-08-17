@@ -8,6 +8,7 @@ import Payment from "./payment/Payment";
 import Storage from "./storage/Storage";
 import StorageDetail from "./storage/StorageDetail";
 import Find from "./storage/Find";
+import Orders from "./orders/Orders";
 
 class Router extends React.Component {
   render() {
@@ -21,6 +22,7 @@ class Router extends React.Component {
         <Route path="/storage" element={<Storage />} />
         <Route path="/storage/:storageId" element={<StorageDetail />} />
         <Route path="/find" element={<Find />} />
+        <Route path="/orders" element={<Orders />} />
         <Route path="*" element={<Home />} />
       </Routes>
     );

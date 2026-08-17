@@ -109,6 +109,13 @@ async function run(line) {
       await page.waitForTimeout(700);
       return `clicked text "${rest}" -> ${page.url()}`;
 
+    // Some controls only exist while the pointer is over their card, so a
+    // plain click never reaches them.
+    case "hover":
+      await page.hover(rest, { timeout: 15000 });
+      await page.waitForTimeout(400);
+      return `hovering ${rest}`;
+
     case "text": {
       const t = rest
         ? await page.locator(rest).first().innerText()
