@@ -248,3 +248,9 @@ button.small {
 .demandStock.out {
   background: #c0392b;
 }
+
+.demandHint {
+  color: #666;
+  font-size: 0.85em;
+  margin-bottom: 10px;
+}

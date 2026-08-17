@@ -110,6 +110,10 @@ const texts = {
   WANTED_BY: "Buscada por",
   IN_STOCK_COUNT: "En stock",
   NO_DEMAND: "Ningún cliente tiene cartas en su lista de deseados.",
+  UNSATISFIED: "Sin cubrir",
+  SATISFIED: "Cubierta",
+  DEMAND_HINT:
+    "Cada cliente puede pedir versiones, idiomas o estados concretos. \"Sin cubrir\" significa que lo que hay en la tienda no cumple sus preferencias.",
 };
 
 module.exports = texts;

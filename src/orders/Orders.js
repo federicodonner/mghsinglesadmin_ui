@@ -164,6 +164,7 @@ export default function Orders() {
           {/* What customers are asking for — the list to read before taking
               cards on consignment. */}
           <div className="title demandTitle">{texts.DEMAND_TITLE}</div>
+          <div className="demandHint">{texts.DEMAND_HINT}</div>
           {!demand.length && <div className="emptyState">{texts.NO_DEMAND}</div>}
           {demand.map((entry) => (
             <div className="demandRow" key={entry.name}>
@@ -172,11 +173,18 @@ export default function Orders() {
                 {texts.WANTED_BY} {entry.wanted}
               </span>
               <span className="demandWanters">{entry.wanters.join(", ")}</span>
-              <span
-                className={
-                  entry.inStock > 0 ? "demandStock in" : "demandStock out"
-                }
-              >
+              {/* A customer whose filters nothing on the shelf satisfies is the
+                  actionable case, so it is called out separately from the raw
+                  stock count. */}
+              {entry.unsatisfied.length > 0 && (
+                <span className="demandStock out">
+                  {texts.UNSATISFIED}: {entry.unsatisfied.join(", ")}
+                </span>
+              )}
+              {entry.unsatisfied.length === 0 && (
+                <span className="demandStock in">{texts.SATISFIED}</span>
+              )}
+              <span className="demandCount">
                 {texts.IN_STOCK_COUNT}: {entry.inStock}
               </span>
             </div>
