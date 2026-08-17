@@ -29,3 +29,23 @@
   margin-bottom: -3px;
   margin-left: 7px;
 }
+
+/* CardKingdom reference, shown beside the card the shop is about to price.
+   This list sits inside a dark modal, so the reference has to be light — the
+   usual #33586b was very nearly invisible here. */
+.ckReference {
+  color: #ffd9a0;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.ckBuylist {
+  color: #cfd8dc;
+}
+
+/* MTGJSON does not price every printing — say so rather than showing nothing,
+   which would read as "free". */
+.ckMissing {
+  color: #cfd8dc;
+  font-style: italic;
+}
