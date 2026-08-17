@@ -1,0 +1,9 @@
+{
+  "name": "run-mghsingles-admin-driver",
+  "private": true,
+  "type": "module",
+  "description": "Headless browser driver for the mghsingles admin UI. Uses system Chrome via playwright-core, so no browser download.",
+  "dependencies": {
+    "playwright-core": "^1.49.0"
+  }
+}
