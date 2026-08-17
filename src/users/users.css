@@ -1,0 +1,59 @@
+.usersContainer {
+  width: 90%;
+  max-width: 760px;
+  margin: 0 auto 60px;
+}
+
+.usersContainer .title {
+  font-size: 1.3em;
+  color: #33586b;
+  margin: 24px 0 6px;
+}
+
+.usersHint {
+  color: #666;
+  font-size: 0.85em;
+  margin-bottom: 16px;
+}
+
+.userRow {
+  display: grid;
+  grid-template-columns: 1fr 160px 100px;
+  gap: 12px;
+  align-items: center;
+  padding: 9px 0;
+  border-top: 1px solid #eee;
+}
+
+.userRow.head {
+  color: #90a4ae;
+  font-size: 0.85em;
+  border-top: none;
+}
+
+.userName {
+  font-weight: bold;
+  color: #33586b;
+}
+
+.userMeta {
+  font-weight: normal;
+  color: #888;
+  font-size: 0.85em;
+}
+
+.userRow select {
+  padding: 6px;
+  border: 1px solid #b5b5b5;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Your own row is inert: the API refuses self-demotion, so the controls say so
+   rather than letting you discover it by error. */
+.userRow select:disabled,
+.userRow button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

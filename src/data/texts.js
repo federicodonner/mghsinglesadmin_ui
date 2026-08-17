@@ -95,6 +95,18 @@ const texts = {
   CONFIRM_DELETE_STORAGE: "¿Eliminar este contenedor?",
   ORDERS: "Pedidos",
   PRICING: "Precios",
+  USERS: "Usuarios",
+  USERS_TITLE: "Cuentas y roles",
+  COL_ACCOUNT: "Cuenta",
+  COL_ROLE: "Rol",
+  USERS_HINT:
+    "Las cuentas se crean desde la tienda; aquí solo se asigna el rol. Empleado vende y maneja el stock; dueño además cobra, paga y define precios.",
+  ROLE_customer: "Cliente",
+  ROLE_staff: "Empleado",
+  ROLE_owner: "Dueño",
+  ROLE_YOU: "tú",
+  SAVE_ROLE: "Guardar",
+  ROLE_SAVED_OK: "Rol actualizado.",
   MULTIPLIERS_TITLE: "Multiplicadores por estado",
   MULTIPLIERS_HINT:
     "CardKingdom publica un solo precio por carta, que es el de NM. El resto de los estados se calculan multiplicando ese precio.",

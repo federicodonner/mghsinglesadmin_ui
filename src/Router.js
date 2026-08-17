@@ -10,6 +10,7 @@ import StorageDetail from "./storage/StorageDetail";
 import Find from "./storage/Find";
 import Orders from "./orders/Orders";
 import Pricing from "./pricing/Pricing";
+import Users from "./users/Users";
 
 class Router extends React.Component {
   render() {
@@ -25,6 +26,7 @@ class Router extends React.Component {
         <Route path="/find" element={<Find />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/users" element={<Users />} />
         <Route path="*" element={<Home />} />
       </Routes>
     );

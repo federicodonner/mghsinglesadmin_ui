@@ -5,6 +5,7 @@ import Header from "../header/Header";
 import texts from "../data/texts";
 import whiteLoader from "../images/whiteLoader.svg";
 import { storeInLS, accessAPI } from "../utils/fetchFunctions";
+import { storeRole } from "../utils/role";
 
 export default function Login() {
   const [loginLoader, setLoginLoader] = useState(true);
@@ -25,13 +26,21 @@ export default function Login() {
       "player/me",
       null,
       (response) => {
-        // If the response is 200, means the user is logged in
-        // If the user is a superuser, store it in LS
-        if (response.superuser) {
-          storeInLS(process.env.REACT_APP_LS_SUPERUSER, "1");
-        }
-        // Navigate to home
-        navigate("/home");
+        // If the response is 200, means the user is logged in.
+        // player/me does not report the role, so ask the shop-side endpoint:
+        // it answers only for staff and owner, which is exactly the gate this
+        // app needs.
+        accessAPI(
+          "GET",
+          "admin/me",
+          null,
+          (me) => {
+            storeRole(me.role);
+            navigate("/home");
+          },
+          // A customer account is logged in but has no business here.
+          () => setLoginLoader(false)
+        );
       },
       (response) => {
         // If the user is not logged in, turn off the loader
@@ -65,12 +74,13 @@ export default function Login() {
         password: loginPassword.current.value,
       }),
       (response) => {
-        // If the login is successful, store the token in LS and navigate
+        // If the login is successful, store the token in LS and navigate.
         storeInLS(process.env.REACT_APP_LS_LOGIN_TOKEN, response.token);
-        // If the user is a superuser, store it in LS
-        if (response.superuser === 1) {
-          storeInLS(process.env.REACT_APP_LS_SUPERUSER, "1");
-        }
+        // The old code tested `response.superuser === 1` against a boolean, so
+        // it never fired, and wrote to REACT_APP_LS_SUPERUSER which was never
+        // defined — the value landed under the key "undefined". The API now
+        // returns a role and it is stored under a real key.
+        storeRole(response.role);
         navigate("/home");
       },
       (response) => {
