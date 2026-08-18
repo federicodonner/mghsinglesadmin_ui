@@ -58,7 +58,7 @@ export default function Sell() {
     setSearchLoader(true);
     accessAPI(
       "GET",
-      "store/search/" + cardRef.current.value,
+      "admin/cards/search?q=" + encodeURIComponent(cardRef.current.value),
       null,
       (response) => {
         // If there are cards in the reponse, show the options

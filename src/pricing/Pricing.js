@@ -80,7 +80,7 @@ export default function Pricing() {
     setSearching(true);
     accessAPI(
       "GET",
-      `store/search/${encodeURIComponent(query)}`,
+      `admin/cards/search?q=${encodeURIComponent(query)}`,
       null,
       (response) => {
         setCards(response.cards ?? []);
