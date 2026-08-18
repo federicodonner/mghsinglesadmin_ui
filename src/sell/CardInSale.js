@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import texts from "../data/texts";
 import "./cardInSale.css";
 import foilIcon from "../images/foilIcon.svg";
+import TextField from "@mui/material/TextField";
 
 export default function CardInSale(props) {
   const [quantitySelector, setQuantitySelector] = useState([]);
@@ -48,10 +49,10 @@ export default function CardInSale(props) {
       <div className="condition">{props.card.condition}</div>
       <div className="user">{props.card.player}</div>
       <div className="quantity">
-        <select
+        <TextField select SelectProps={{ native: true }}
           name="quantity"
           id="quantity"
-          ref={quantityRef}
+          inputRef={quantityRef}
           onChange={() => {
             props.updateQuantity(props.card.id, quantityRef.current.value);
           }}
@@ -63,14 +64,15 @@ export default function CardInSale(props) {
               </option>
             );
           })}
-        </select>
+        </TextField>
       </div>
       <div className="price">
         U$S{" "}
-        <input
+        <TextField
           type="text"
-          ref={priceRef}
-          className={!props.card.price ? "error" : ""}
+          inputRef={priceRef}
+          error={!props.card.price}
+          size="small"
           onChange={() => {
             props.updatePrice(props.card.id, priceRef.current.value);
           }}

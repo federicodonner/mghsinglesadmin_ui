@@ -1,71 +1,34 @@
+/* The login card.
+ *
+ * This used to be a solid teal panel with hand-rolled inputs and buttons drawn
+ * on top of it, which left the primary action nearly invisible against its own
+ * background. The card is now a neutral surface and the brand colour lives
+ * where it should: on the button you are meant to press. */
 .loginContainer {
-  margin-left: auto;
-  margin-right: auto;
-  width: 300px;
-  background-color: #3a606e;
+  margin: 40px auto 0;
+  width: 340px;
+  max-width: 92vw;
+  background-color: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
   text-align: center;
-  border-radius: 6px;
-  max-height: 500px;
-  /* transition: max-height 0.3s ease-out; */
 }
 
+/* While the loader is up there are no fields to size around. */
 .loginContainer.loader {
-  max-height: 320px;
+  background-color: #3a606e;
+  border-color: #3a606e;
 }
 
 .loginForm {
-  padding: 10px;
-  overflow: hidden;
+  padding: 24px 22px;
 }
 
 .loginForm .fields {
-  margin-bottom: 10px;
+  margin-bottom: 4px;
 }
 
-.loginForm input {
-  margin-left: auto;
-  margin-right: auto;
-  display: block;
-  font-size: 13pt;
-  padding: 10px 10px;
-  border-radius: 6px;
-  width: 80%;
-  margin-top: 10px;
-  margin-bottom: 10px;
-  border: none;
-  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.4));
-}
-
-.loginForm button {
-  margin-left: auto;
-  margin-right: auto;
-  margin-top: 15px;
-}
-
-.loginForm button.login {
-  margin-bottom: 15px;
-}
-
-.loginForm button.create {
-  margin-top: 20px;
-  margin-bottom: 20px;
-}
-
-.loginForm input.error {
-  background-color: #febfbf;
-}
-
-.loginForm button.register {
-  margin-top: 30px;
-  margin-bottom: 10px;
-}
-
-.divider {
-  margin-left: auto;
-  margin-right: auto;
-  margin-top: 10px;
-  margin-bottom: 10px;
-  width: 80%;
-  height: 1px;
-  background-color: #607b7d;
+.loaderContainer {
+  padding: 40px 0;
 }

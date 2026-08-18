@@ -6,6 +6,7 @@ import BinderPage from "./BinderPage";
 import texts from "../data/texts";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import "./storage.css";
+import Button from "@mui/material/Button";
 
 const TYPE_LABELS = {
   binder: texts.BINDER,
@@ -83,26 +84,24 @@ export default function StorageDetail() {
           {unit.type === "binder" && (
             <>
               <div className="spreadNav">
-                <button
-                  className="light"
+                <Button variant="outlined"
                   disabled={spread <= 0}
                   onClick={() => setSpread(spread - 1)}
                 >
                   {texts.PREVIOUS}
-                </button>
+                </Button>
                 <span className="spreadLabel">
                   {(unit.pages ?? [])
                     .filter(Boolean)
                     .map((page) => page.page)
                     .join(" · ")}
                 </span>
-                <button
-                  className="light"
+                <Button variant="outlined"
                   disabled={spread >= (unit.maxSpread ?? 0)}
                   onClick={() => setSpread(spread + 1)}
                 >
                   {texts.NEXT}
-                </button>
+                </Button>
               </div>
               <div className="binderSpread">
                 {(unit.pages ?? []).map((page, index) => (
@@ -137,12 +136,11 @@ export default function StorageDetail() {
                   <span className="boxMeta">{card.condition}</span>
                   <span className="boxMeta">{card.language}</span>
                   <span className="boxMeta">{card.owner}</span>
-                  <button
-                    className="light small"
-                    onClick={() => removePlacement(card.placementid)}
-                  >
+                  <Button variant="outlined" color="error" size="small"
+ onClick={() => removePlacement(card.placementid)}
+ >
                     {texts.DELETE}
-                  </button>
+                  </Button>
                 </div>
               ))}
               {!(unit.cards ?? []).length && (

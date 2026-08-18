@@ -6,6 +6,8 @@ import BinderPage from "./BinderPage";
 import texts from "../data/texts";
 import { accessAPI } from "../utils/fetchFunctions";
 import "./storage.css";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
 
 const TYPE_LABELS = {
   binder: texts.BINDER,
@@ -77,14 +79,14 @@ export default function Find() {
       <div className="storageContainer">
         <form className="findForm" onSubmit={search}>
           <span className="formTitle">{texts.FIND_TITLE}</span>
-          <input
+          <TextField
             type="text"
             placeholder={texts.FIND_PLACEHOLDER}
-            ref={searchRef}
+            inputRef={searchRef}
           />
-          <button type="submit" className="dark">
+          <Button type="submit">
             {texts.FIND}
-          </button>
+          </Button>
         </form>
 
         {loader && <Loader color="blue" />}

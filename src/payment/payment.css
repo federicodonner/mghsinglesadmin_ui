@@ -14,7 +14,7 @@
   margin-bottom: 20px;
 }
 
-.paymentFormContainer button {
+.paymentFormContainer .MuiButton-root {
   margin-bottom: 40px;
 }
 

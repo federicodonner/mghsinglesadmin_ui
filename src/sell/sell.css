@@ -15,16 +15,16 @@
   color: #19647e;
 }
 
-.cardsInSale button.finishSale {
-  margin-top: 20px;
-  margin-left: auto;
-  margin-bottom: 20px;
+.cardsInSale .finishSale {
+  margin: 20px 0 20px auto;
+  display: flex;
 }
 
 .searchContainer {
   text-align: center;
 }
 
-.searchContainer input {
+.searchContainer .MuiTextField-root {
   width: 400px;
+  max-width: 100%;
 }

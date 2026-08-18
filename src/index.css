@@ -1,3 +1,13 @@
+/* One page width for the whole app.
+ *
+ * The header was pinned at 900px while the newer page containers had grown to
+ * max-width 1100px, so the menu bar visibly stopped short of the content under
+ * it. Everything that defines the page's horizontal extent now reads this, so
+ * they cannot drift apart again. */
+:root {
+  --page-width: min(1180px, 94vw);
+}
+
 html {
   overflow-y: scroll;
 }

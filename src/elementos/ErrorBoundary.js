@@ -1,5 +1,6 @@
 import React from "react";
 import "./errorBoundary.css";
+import Button from "@mui/material/Button";
 
 // Without this, a render-time TypeError anywhere in the tree unmounts the whole
 // app and leaves a blank white page with nothing on screen to explain it —
@@ -31,15 +32,14 @@ export default class ErrorBoundary extends React.Component {
           Ocurrió un error mostrando esta página. Puedes recargar e intentar
           nuevamente.
         </p>
-        <button
-          className="dark"
+        <Button
           onClick={() => this.setState({ error: null })}
         >
           Reintentar
-        </button>
-        <button className="dark" onClick={() => window.location.reload()}>
+        </Button>
+        <Button onClick={() => window.location.reload()}>
           Recargar
-        </button>
+        </Button>
         {/* The message is useful while developing and harmless in production —
             it names the failure rather than leaving a blank screen. */}
         <pre className="errorDetail">{String(this.state.error)}</pre>

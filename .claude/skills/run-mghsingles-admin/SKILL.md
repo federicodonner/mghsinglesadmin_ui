@@ -5,7 +5,7 @@ description: Build, run and drive the mghsingles admin UI headlessly. Use when a
 
 # Run the mghsingles admin UI
 
-Create React App 5 + React 17 + react-router 6. Spanish-language back office for
+Create React App 5 + React 18 + react-router 6 + MUI 7. Spanish-language back office for
 `mghsingles_api` (sell cards, register payments). Same shape as the customer UI
 but **superuser-gated**, and themed dark blue instead of orange — a fast way to
 tell the two apps' screenshots apart.
@@ -142,6 +142,27 @@ Note that **the customer UI defaults to the same port** — run only one of them
 without a `PORT` override.
 
 ## Gotchas
+
+- **Every interactive element is MUI.** Buttons, text fields, selects,
+  checkboxes, radios, chips and the nav bar all come from `@mui/material`, themed
+  in `src/theme.js`. Two consequences when driving it:
+
+  - **Class names are MUI's**, e.g. `MuiButton-root MuiButton-contained ...`,
+    plus any `className` the component passes through. The hooks the flows below
+    rely on — `button.login`, `button.create`, `button.search` — are still
+    present, because they are passed as `className` deliberately. Anything else,
+    run `ls` and read the real classes rather than guessing.
+  - **`input[placeholder="..."]` still works.** A `TextField` renders a real
+    `<input>` with the placeholder on it; the Spanish text is unchanged
+    (`input[placeholder="Usuario"]`, `input[placeholder="Contraseña"]` — note
+    the accented `ñ`). Selects are `TextField select` with
+    `SelectProps={{native: true}}`, so they are still real `<select>` elements
+    with `<option>` children and `fill` works on them.
+
+  Do NOT restyle a button by editing CSS — set the MUI props (`variant`,
+  `color`, `size`) or change the theme. The old `.dark` / `.light` / `.orange`
+  classes are gone, and the global `button {}` and `input, select {}` rules in
+  `App.css` were removed because they fought the components.
 
 - **`/storage` shows every container and the shop's half of the lifecycle.** A
   customer's container carries a state badge (`En venta`, `Retirado por el

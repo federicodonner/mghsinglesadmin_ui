@@ -6,6 +6,8 @@ import texts from "../data/texts";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
 import "./orders.css";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
 
 function formatDate(seconds) {
   if (!seconds) return "";
@@ -186,20 +188,18 @@ export default function Orders() {
                       ? "—"
                       : `U$S ${match.price ?? "?"}`}
                   </span>
-                  <button
-                    className="dark small"
+                  <Button size="small"
                     onClick={() => actOnMatch(match, "setaside")}
                   >
                     {texts.SET_ASIDE}
-                  </button>
-                  <button
-                    className="light small"
-                    onClick={() =>
-                      actOnMatch(match, "dismiss", texts.CONFIRM_DISMISS_MATCH)
-                    }
-                  >
+                  </Button>
+                  <Button variant="outlined" color="error" size="small"
+ onClick={() =>
+ actOnMatch(match, "dismiss", texts.CONFIRM_DISMISS_MATCH)
+ }
+ >
                     {texts.DISMISS_MATCH}
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Where to actually go and get this one. Two rows can share a
@@ -215,7 +215,7 @@ export default function Orders() {
                   {/* Several copies on the shelf: the shop says which one they
                       took, so a cancellation refiles the right one. */}
                   {match.locations.length > 1 && (
-                    <select
+                    <TextField select SelectProps={{ native: true }}
                       value={chosen[match.id] ?? match.locations[0].placementid}
                       onChange={(e) =>
                         setChosen({
@@ -232,7 +232,7 @@ export default function Orders() {
                           {locationLabel(location)}
                         </option>
                       ))}
-                    </select>
+                    </TextField>
                   )}
                 </div>
                 </div>
@@ -254,20 +254,19 @@ export default function Orders() {
                   <span className="refileWhere">{locationLabel(item)}</span>
                 </div>
               ))}
-              <button className="dark small" onClick={() => setRefile(null)}>
+              <Button size="small" onClick={() => setRefile(null)}>
                 {texts.REFILE_DONE}
-              </button>
+              </Button>
             </div>
           )}
 
           <div className="ordersHead ordersHeadSpaced">
             <span className="title">{texts.ORDERS_TITLE}</span>
-            <button
-              className="light small"
+            <Button variant="outlined" size="small"
               onClick={() => setPendingOnly(!pendingOnly)}
             >
               {pendingOnly ? texts.SHOW_ALL : texts.SHOW_PENDING}
-            </button>
+            </Button>
           </div>
 
           {!shown.length && <div className="emptyState">{texts.NO_ORDERS}</div>}
@@ -313,28 +312,25 @@ export default function Orders() {
               {/* Only a live reservation can be acted on. */}
               {order.status === "pending" && (
                 <div className="orderActions">
-                  <button
-                    className="dark"
+                  <Button
                     onClick={() =>
                       act(order, "complete", texts.CONFIRM_COMPLETE)
                     }
                   >
                     {texts.COMPLETE_ORDER}
-                  </button>
-                  <button
-                    className="light"
+                  </Button>
+                  <Button variant="outlined"
                     onClick={() => act(order, "extend")}
                   >
                     {texts.EXTEND_ORDER}
-                  </button>
-                  <button
-                    className="light"
-                    onClick={() =>
-                      act(order, "cancel", texts.CONFIRM_CANCEL_ORDER)
-                    }
-                  >
+                  </Button>
+                  <Button variant="outlined" color="error"
+ onClick={() =>
+ act(order, "cancel", texts.CONFIRM_CANCEL_ORDER)
+ }
+ >
                     {texts.CANCEL_ORDER}
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>

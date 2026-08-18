@@ -22,20 +22,17 @@
   width: 80px;
 }
 
-.cardInSale .quantity select {
-  padding: 3px 8px;
-  font-size: 10pt;
-  background-color: white;
+/* Appearance comes from the theme now; only the layout is ours. */
+.cardInSale .quantity .MuiTextField-root {
+  min-width: 72px;
 }
 
 .cardsInSale .price {
   width: 100px;
 }
 
-.cardsInSale .price input {
-  padding: 3px 8px;
-  font-size: 10pt;
-  width: 30px;
+.cardsInSale .price .MuiTextField-root {
+  width: 88px;
 }
 
 .cardsInSale .price input.error {

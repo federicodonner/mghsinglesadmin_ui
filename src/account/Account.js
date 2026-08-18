@@ -6,6 +6,8 @@ import "./account.css";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import texts from "../data/texts";
 import whiteLoader from "../images/whiteLoader.svg";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
 
 export default function Account() {
   const [loader, setLoader] = useState(true);
@@ -126,54 +128,54 @@ export default function Account() {
               <div className="detailFields">
                 <div className="detailField">
                   <div className="label">{texts.NAME_PLACEHOLDER}</div>
-                  <input
+                  <TextField
                     type="text"
-                    ref={newNameRef}
+                    inputRef={newNameRef}
                     placeholder={playerDetails.name}
                     disabled={updateDetailsLoader}
                   />
                 </div>
                 <div className="detailField">
                   <div className="label">{texts.EMAIL_PLACEHOLDER}</div>
-                  <input
+                  <TextField
                     type="text"
-                    ref={newEmailRef}
+                    inputRef={newEmailRef}
                     placeholder={playerDetails.email}
                     disabled={updateDetailsLoader}
                   />
                 </div>
-                <button className="dark updateDetails" onClick={updateDetails}>
+                <Button className="updateDetails" onClick={updateDetails}>
                   {updateDetailsLoader && (
                     <img className="loader" src={whiteLoader} alt="loader" />
                   )}
                   {!updateDetailsLoader && <span>{texts.ACCEPT}</span>}
-                </button>
+                </Button>
               </div>
               <div className="title">{texts.UPDATE_PASSWORD}</div>
               <div className="detailFields">
                 <div className="detailField">
                   <div className="label">{texts.CURRENT_PASSWORD}</div>
-                  <input
+                  <TextField
                     type="password"
-                    ref={passwordRef}
+                    inputRef={passwordRef}
                     disabled={updatePasswordLoader}
                   />
                 </div>
                 <div className="detailField">
                   <div className="label">{texts.NEW_PASSWORD}</div>
-                  <input
+                  <TextField
                     type="password"
-                    ref={newPasswordRef}
+                    inputRef={newPasswordRef}
                     disabled={updatePasswordLoader}
                   />
                 </div>
               </div>
-              <button className="dark updateDetails" onClick={updatePassword}>
+              <Button className="updateDetails" onClick={updatePassword}>
                 {updatePasswordLoader && (
                   <img className="loader" src={whiteLoader} alt="loader" />
                 )}
                 {!updatePasswordLoader && <span>{texts.ACCEPT}</span>}
-              </button>
+              </Button>
             </div>
           </>
         )}

@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import "./payment.css";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import texts from "../data/texts";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
 
 export default function Payment() {
   const [loader, setLoader] = useState(true);
@@ -98,18 +100,18 @@ export default function Payment() {
             <div className="paymentFormContainer">
               <div className="title">{texts.PAYMENT_TITLE}</div>
               <div className="inputContainer">
-                <input
+                <TextField
                   type="number"
                   placeholder={texts.AMMOUNT_PLACEHOLDER}
-                  ref={ammountRef}
+                  inputRef={ammountRef}
                 />
               </div>
               <div className="inputContainer">
-                <select
+                <TextField select SelectProps={{ native: true }}
                   name="account"
                   id="account"
                   defaultValue="DEFAULT"
-                  ref={collectionRef}
+                  inputRef={collectionRef}
                 >
                   <option value="DEFAULT" disabled>
                     {texts.SELECT_USER}
@@ -121,11 +123,11 @@ export default function Payment() {
                       </option>
                     );
                   })}
-                </select>
+                </TextField>
               </div>
-              <button className="dark" onClick={processPayment}>
+              <Button onClick={processPayment}>
                 {texts.ACCEPT}
-              </button>
+              </Button>
             </div>
           </>
         )}

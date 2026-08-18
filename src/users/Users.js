@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import texts from "../data/texts";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import "./users.css";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
 
 const ROLES = ["customer", "staff", "owner"];
 
@@ -100,7 +102,7 @@ export default function Users() {
                     </span>
                   </span>
 
-                  <select
+                  <TextField select SelectProps={{ native: true }}
                     value={picked[player.id] ?? player.role}
                     disabled={isMe}
                     onChange={(e) =>
@@ -112,17 +114,16 @@ export default function Users() {
                         {texts[`ROLE_${role}`]}
                       </option>
                     ))}
-                  </select>
+                  </TextField>
 
-                  <button
-                    className="dark small"
+                  <Button size="small"
                     disabled={
                       isMe || (picked[player.id] ?? player.role) === player.role
                     }
                     onClick={() => saveRole(player)}
                   >
                     {texts.SAVE_ROLE}
-                  </button>
+                  </Button>
                 </div>
               );
             })}

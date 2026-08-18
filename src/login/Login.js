@@ -5,6 +5,9 @@ import Header from "../header/Header";
 import texts from "../data/texts";
 import whiteLoader from "../images/whiteLoader.svg";
 import { storeInLS, accessAPI } from "../utils/fetchFunctions";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Stack from "@mui/material/Stack";
 import { storeRole } from "../utils/role";
 
 export default function Login() {
@@ -104,31 +107,34 @@ export default function Login() {
           <div className="loginForm">
             <div className="fields">
               <form onSubmit={loginUser}>
-                <input
-                  type="text"
-                  placeholder={texts.USER_PLACEHOLDER}
-                  className={usernameError ? "error" : ""}
-                  onChange={() => {
-                    setUsernameError(false);
-                  }}
-                  ref={loginUsername}
-                />
-                <input
-                  type="password"
-                  placeholder={texts.PASSWORD_PLACEHOLDER}
-                  className={passwordError ? "error" : ""}
-                  onChange={() => {
-                    setPasswordError(false);
-                  }}
-                  ref={loginPassword}
-                />
-
-                <button className="light login" type="submit">
-                  {texts.ENTER}
-                </button>
+                <Stack spacing={2}>
+                  {/* inputRef, not ref: TextField is a wrapper, and the code
+                      below reads .current.value off the actual input. */}
+                  <TextField
+                    type="text"
+                    placeholder={texts.USER_PLACEHOLDER}
+                    error={usernameError}
+                    onChange={() => setUsernameError(false)}
+                    inputRef={loginUsername}
+                    fullWidth
+                  />
+                  <TextField
+                    type="password"
+                    placeholder={texts.PASSWORD_PLACEHOLDER}
+                    error={passwordError}
+                    onChange={() => setPasswordError(false)}
+                    inputRef={loginPassword}
+                    fullWidth
+                  />
+                  <Button className="login" type="submit" fullWidth>
+                    {texts.ENTER}
+                  </Button>
+                </Stack>
               </form>
             </div>
-            <div className="textButton white">{texts.FORGOT_PASSWORD}</div>
+            <Button variant="text" className="forgot">
+              {texts.FORGOT_PASSWORD}
+            </Button>
           </div>
         )}
       </div>

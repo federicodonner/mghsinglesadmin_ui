@@ -8,6 +8,8 @@ import "./sell.css";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import texts from "../data/texts";
 import whiteLoader from "../images/whiteLoader.svg";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
 
 export default function Sell() {
   const [loader, setLoader] = useState(false);
@@ -183,18 +185,18 @@ export default function Sell() {
           <>
             <div className="searchContainer">
               <form onSubmit={findCard}>
-                <input
+                <TextField
                   type="text"
-                  ref={cardRef}
+                  inputRef={cardRef}
                   placeholder={texts.CARD_NAME}
                   disabled={searchLoader || loader}
                 />
-                <button className="dark search" onClick={findCard}>
+                <Button className="search" onClick={findCard}>
                   {searchLoader && (
                     <img className="loader" src={whiteLoader} alt="loader" />
                   )}
                   {!searchLoader && <span>{texts.SEARCH}</span>}
-                </button>
+                </Button>
               </form>
             </div>
             <div className="cardsInSale">
@@ -212,9 +214,9 @@ export default function Sell() {
                 );
               })}
               {cardsInSale.length > 0 && (
-                <button className="dark finishSale" onClick={processSale}>
+                <Button className="finishSale" onClick={processSale}>
                   {texts.FINISH_SALE}
-                </button>
+                </Button>
               )}
             </div>
           </>

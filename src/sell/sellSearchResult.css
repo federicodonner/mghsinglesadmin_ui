@@ -7,8 +7,8 @@
   cursor: pointer;
 }
 
-.sellSearchResult button {
-  display: inline-block;
+.sellSearchResult .MuiButton-root {
+  display: inline-flex;
 }
 
 .sellSearchResult .cardName {

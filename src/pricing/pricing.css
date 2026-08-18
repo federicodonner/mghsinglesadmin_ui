@@ -1,6 +1,5 @@
 .pricingContainer {
-  width: 90%;
-  max-width: 1100px;
+  width: var(--page-width);
   margin: 0 auto 60px;
 }
 
@@ -17,8 +16,12 @@
 }
 
 /* ---- multipliers ------------------------------------------------------ */
+/* Was inline-block, which worked only because the old <button> was
+   display:block and forced itself onto the next line. A MUI Button is
+   inline-flex, so the table has to claim the row itself. */
 .multiplierTable {
-  display: inline-block;
+  display: block;
+  width: max-content;
   margin-bottom: 14px;
 }
 
@@ -40,16 +43,11 @@
   color: #33586b;
 }
 
-.multiplierRow input,
-.priceField input[type="number"],
-.priceSearchForm input {
-  padding: 6px;
-  border: 1px solid #b5b5b5;
-  border-radius: 4px;
+/* Only the column width is ours — padding, border and radius come from the
+   theme now, and duplicating them here is what made the fields drift apart. */
+.multiplierRow .MuiTextField-root,
+.priceField .MuiTextField-root {
   width: 100%;
-  /* Without this the padding and border push the input past its grid column
-     and it overlaps the reference beside it. */
-  box-sizing: border-box;
 }
 
 /* ---- per-card prices --------------------------------------------------- */
@@ -63,8 +61,9 @@
   margin-bottom: 16px;
 }
 
-.priceSearchForm input {
-  flex: 1 1 300px;
+/* The flex target is the TextField wrapper, not the inner input. */
+.priceSearchForm .MuiTextField-root {
+  flex: 0 1 340px;
 }
 
 .priceRow {

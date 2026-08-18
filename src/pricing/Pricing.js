@@ -6,6 +6,11 @@ import texts from "../data/texts";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
 import "./pricing.css";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Tooltip from "@mui/material/Tooltip";
 
 // The shop's pricing policy and the per-card overrides, on one page: both
 // answer "what does this card cost", and the multipliers are meaningless
@@ -139,21 +144,19 @@ export default function Pricing() {
             {conditions.map((condition) => (
               <div className="multiplierRow" key={condition.id}>
                 <span className="multName">{condition.name}</span>
-                <input
+                <TextField
                   type="number"
-                  step="0.01"
-                  min="0"
-                  max="1"
+                  size="small"
+                  inputProps={{ step: 0.01, min: 0, max: 1, }}
                   value={condition.sellmultiplier}
                   onChange={(e) =>
                     setMultiplier(condition.id, "sellmultiplier", e.target.value)
                   }
                 />
-                <input
+                <TextField
                   type="number"
-                  step="0.01"
-                  min="0"
-                  max="1"
+                  size="small"
+                  inputProps={{ step: 0.01, min: 0, max: 1, }}
                   value={condition.buymultiplier}
                   onChange={(e) =>
                     setMultiplier(condition.id, "buymultiplier", e.target.value)
@@ -162,13 +165,12 @@ export default function Pricing() {
               </div>
             ))}
           </div>
-          <button
-            className="dark"
+          <Button
             onClick={saveMultipliers}
             disabled={savingMultipliers}
           >
             {texts.SAVE_MULTIPLIERS}
-          </button>
+          </Button>
 
           <div className="title priceSearchTitle">
             {texts.PRICE_SEARCH_TITLE}
@@ -176,14 +178,14 @@ export default function Pricing() {
           <div className="pricingHint">{texts.PRICE_SEARCH_HINT}</div>
 
           <form className="priceSearchForm" onSubmit={search}>
-            <input
+            <TextField
               type="text"
               placeholder={texts.PRICE_SEARCH_PLACEHOLDER}
-              ref={searchRef}
+              inputRef={searchRef}
             />
-            <button type="submit" className="dark">
+            <Button type="submit">
               {texts.FIND}
-            </button>
+            </Button>
           </form>
 
           {searching && <Loader color="blue" />}
@@ -212,57 +214,65 @@ export default function Pricing() {
 
                     {/* Sell and buy are edited and locked independently. */}
                     <span className="priceField">
-                      <input
+                      <TextField
                         type="number"
-                        step="0.01"
-                        min="0"
+                        size="small"
+                        inputProps={{ step: 0.01, min: 0 }}
                         value={current.price}
                         onChange={(e) => edit(card, "price", e.target.value)}
                       />
-                      <label
-                        className="lockToggle"
+                      <Tooltip
                         title={
                           current.pricelocked
                             ? texts.LOCKED
                             : texts.FOLLOWS_MARKET
                         }
                       >
-                        <input
-                          type="checkbox"
-                          checked={current.pricelocked}
-                          onChange={(e) =>
-                            edit(card, "pricelocked", e.target.checked)
+                        <FormControlLabel
+                          className="lockToggle"
+                          control={
+                            <Checkbox
+                              size="small"
+                              checked={current.pricelocked}
+                              onChange={(e) =>
+                                edit(card, "pricelocked", e.target.checked)
+                              }
+                            />
                           }
+                          label={texts.LOCKED}
                         />
-                        {texts.LOCKED}
-                      </label>
+                      </Tooltip>
                     </span>
 
                     <span className="priceField">
-                      <input
+                      <TextField
                         type="number"
-                        step="0.01"
-                        min="0"
+                        size="small"
+                        inputProps={{ step: 0.01, min: 0 }}
                         value={current.buyprice}
                         onChange={(e) => edit(card, "buyprice", e.target.value)}
                       />
-                      <label
-                        className="lockToggle"
+                      <Tooltip
                         title={
                           current.buypricelocked
                             ? texts.LOCKED
                             : texts.FOLLOWS_MARKET
                         }
                       >
-                        <input
-                          type="checkbox"
-                          checked={current.buypricelocked}
-                          onChange={(e) =>
-                            edit(card, "buypricelocked", e.target.checked)
+                        <FormControlLabel
+                          className="lockToggle"
+                          control={
+                            <Checkbox
+                              size="small"
+                              checked={current.buypricelocked}
+                              onChange={(e) =>
+                                edit(card, "buypricelocked", e.target.checked)
+                              }
+                            />
                           }
+                          label={texts.LOCKED}
                         />
-                        {texts.LOCKED}
-                      </label>
+                      </Tooltip>
                     </span>
 
                     {/* The NM figures the prices above were derived from. */}
@@ -281,12 +291,11 @@ export default function Pricing() {
                       )}
                     </span>
 
-                    <button
-                      className="light small"
+                    <Button variant="outlined" size="small"
                       onClick={() => savePrice(card)}
                     >
                       {texts.SAVE_PRICE}
-                    </button>
+                    </Button>
                   </div>
                 );
               })}

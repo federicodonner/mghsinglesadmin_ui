@@ -1,45 +1,38 @@
-header {
-  position: relative;
-  height: 98px;
-  width: 900px;
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 20px;
-  top: 18px;
+/* The AppBar spans the window; its inner box is capped at the shared page
+   width, so the nav lines up with the content underneath it. */
+.siteHeader {
+  margin-bottom: 24px;
 }
 
-.barraSuperior {
-  position: absolute;
-  top: 30px;
-  left: 0px;
-  width: 100%;
-  height: 30px;
-  background-color: #3a606e;
-  z-index: -1;
-}
-
-.flexContainer {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  justify-content: space-between;
-  margin-top: 10px;
+.headerInner {
+  width: var(--page-width);
+  margin: 0 auto;
 }
 
 .logoContainer {
-  margin-left: 40px;
-  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
 }
 
 .singlesLogo {
-  width: 180px;
+  width: 150px;
+  display: block;
 }
 
 .mghlogoContainer {
-  margin-right: 40px;
-  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.by {
+  color: #fff;
+  font-size: 0.8rem;
 }
 
 .mghlogo {
-  width: 60px;
+  width: 46px;
+  display: block;
 }

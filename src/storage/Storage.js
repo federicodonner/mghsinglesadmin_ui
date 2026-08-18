@@ -5,6 +5,9 @@ import Loader from "../loader/Loader";
 import texts from "../data/texts";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import "./storage.css";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import TextField from "@mui/material/TextField";
 
 const TYPE_LABELS = {
   binder: texts.BINDER,
@@ -154,27 +157,27 @@ export default function Storage() {
         <div className="storageContainer">
           <form className="storageForm" onSubmit={createUnit}>
             <span className="formTitle">{texts.NEW_STORAGE}</span>
-            <input
+            <TextField
               type="text"
               placeholder={texts.STORAGE_NAME}
-              ref={nameRef}
+              inputRef={nameRef}
             />
-            <select ref={typeRef} defaultValue="binder">
+            <TextField select SelectProps={{ native: true }} inputRef={typeRef} defaultValue="binder">
               <option value="binder">{texts.BINDER}</option>
               <option value="sorted_box">{texts.SORTED_BOX}</option>
               <option value="unsorted_box">{texts.UNSORTED_BOX}</option>
-            </select>
-            <select ref={ownerRef} defaultValue="">
+            </TextField>
+            <TextField select SelectProps={{ native: true }} inputRef={ownerRef} defaultValue="">
               <option value="">{texts.SHOP}</option>
               {collections.map((collection) => (
                 <option value={collection.id} key={collection.id}>
                   {collection.name}
                 </option>
               ))}
-            </select>
-            <button type="submit" className="dark">
+            </TextField>
+            <Button type="submit">
               {texts.CREATE}
-            </button>
+            </Button>
           </form>
 
           <div className="storageList">
@@ -194,33 +197,36 @@ export default function Storage() {
                 <span className="storageCount">
                   {unit.cardcount} {texts.CARDS}
                 </span>
-                <span className="storageBadge">
-                  {STATE_LABELS[unit.state]}
-                </span>
+                <Chip
+                  size="small"
+                  variant={unit.forsale ? "filled" : "outlined"}
+                  color={unit.forsale ? "success" : "default"}
+                  label={STATE_LABELS[unit.state]}
+                  className="storageBadge"
+                />
                 {/* Only a customer's container moves, and only along the moves
                     the API says the shop may make from here. */}
                 {(unit.cando || []).map((to) => (
-                  <button
-                    key={to}
-                    className="dark small"
-                    onClick={() => move(unit, to)}
+                  <Button
+ key={to}
+ size="small"
+ onClick={() => move(unit, to)}
                   >
                     {moveLabel(unit.state, to)}
-                  </button>
+                  </Button>
                 ))}
                 {/* The shop can only rename or delete what it physically
                     holds — a released container is the customer's. */}
                 {unit.inshop !== false && (
                   <>
-                    <button className="light small" onClick={() => rename(unit)}>
+                    <Button variant="outlined" size="small" onClick={() => rename(unit)}>
                       {texts.RENAME}
-                    </button>
-                    <button
-                      className="light small"
-                      onClick={() => removeUnit(unit)}
-                    >
+                    </Button>
+                    <Button variant="outlined" color="error" size="small"
+ onClick={() => removeUnit(unit)}
+ >
                       {texts.DELETE}
-                    </button>
+                    </Button>
                   </>
                 )}
               </div>
