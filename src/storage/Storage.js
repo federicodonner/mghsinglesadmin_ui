@@ -27,7 +27,12 @@ const STATE_LABELS = {
 // taking delivery. The API decides which moves are offered (`cando`); this only
 // names them.
 function moveLabel(from, to) {
-  if (to === "released") return texts.DO_RELEASE;
+  if (to === "released") {
+    // From for_sale this is the shop handing a binder back over the counter
+    // without the customer having asked first — a different action from
+    // completing a retirement they requested, and worth a different word.
+    return from === "for_sale" ? texts.DO_RETURN_TO_OWNER : texts.DO_RELEASE;
+  }
   if (to === "for_sale") {
     return from === "retired" ? texts.DO_CANCEL_RETIRE : texts.DO_ACCEPT;
   }
@@ -215,19 +220,29 @@ export default function Storage() {
                     {moveLabel(unit.state, to)}
                   </Button>
                 ))}
-                {/* The shop can only rename or delete what it physically
-                    holds — a released container is the customer's. */}
+                {/* The shop can only rename what it physically holds — a
+                    released container is the customer's. */}
                 {unit.inshop !== false && (
-                  <>
-                    <Button variant="outlined" size="small" onClick={() => rename(unit)}>
-                      {texts.RENAME}
-                    </Button>
-                    <Button variant="outlined" color="error" size="small"
- onClick={() => removeUnit(unit)}
- >
-                      {texts.DELETE}
-                    </Button>
-                  </>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => rename(unit)}
+                  >
+                    {texts.RENAME}
+                  </Button>
+                )}
+                {/* Deleting is for the shop's own containers. A customer's is
+                    handed back, never disposed of — the API refuses either way,
+                    so offering the button would only produce an error. */}
+                {unit.deletable && (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    onClick={() => removeUnit(unit)}
+                  >
+                    {texts.DELETE}
+                  </Button>
                 )}
               </div>
             ))}

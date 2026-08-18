@@ -82,6 +82,7 @@ const texts = {
   STATE_RELEASED: "Entregado",
   STATE_RETURNING: "Lo está trayendo",
   DO_RELEASE: "Entregar al dueño",
+  DO_RETURN_TO_OWNER: "Devolver al dueño",
   DO_ACCEPT: "Recibir y poner en venta",
   DO_CANCEL_RETIRE: "Cancelar retiro",
   HELD_BACK: "Cartas que quedan en la tienda (ya apartadas para un pedido):",
