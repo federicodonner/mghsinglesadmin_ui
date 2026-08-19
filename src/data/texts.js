@@ -170,6 +170,10 @@ const texts = {
   WHERE_IS_IT: "Dónde está",
   NO_LOCATION: "Sin ubicación registrada",
   PICK_FROM: "Tomar de",
+  PULL_TITLE: "Armar bolsas",
+  PULL_HINT:
+    "Estas cartas ya están reservadas en la bolsa de un cliente. Sacálas de su lugar:",
+  PULL_DONE: "Listo",
   REFILE_TITLE: "Devolver a su lugar",
   REFILE_HINT: "Estas cartas salieron de la bolsa. Vuelve a guardarlas aquí:",
   REFILE_DONE: "Listo",

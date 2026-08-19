@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import "./home.css";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import MatchQueue from "../orders/MatchQueue";
+import PullQueue from "../orders/PullQueue";
 import RefileQueue from "../orders/RefileQueue";
 
 // The first screen of a shift. It opens on the match queue because that is
@@ -39,8 +40,11 @@ export default function Home() {
         {!loader && (
           <>
             {/* Cards to put back first: until they are refiled, the shelf is
-                wrong about what it holds. */}
+                wrong about what it holds. Then the bags waiting to be
+                assembled — reserved copies still sitting in their pockets —
+                and only then the match queue's new work. */}
             <RefileQueue />
+            <PullQueue />
             <MatchQueue />
           </>
         )}
