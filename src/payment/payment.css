@@ -1,24 +1,6 @@
-.paymentFormContainer {
-  width: 300px;
-  margin-left: auto;
-  margin-right: auto;
-}
+/* The Pagar page lays itself out with MUI (Stack, Table); nothing here but
+   the number-field spinner hiding, which reads as noise on money inputs. */
 
-.paymentFormContainer .title {
-  margin-bottom: 10px;
-  font-size: 14pt;
-  color: #3a606e;
-}
-
-.inputContainer {
-  margin-bottom: 20px;
-}
-
-.paymentFormContainer .MuiButton-root {
-  margin-bottom: 40px;
-}
-
-/* Hide arrows in number field*/
 /* Chrome, Safari, Edge, Opera */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {

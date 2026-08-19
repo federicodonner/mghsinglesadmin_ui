@@ -1,30 +1,53 @@
-.sellSelectVersionModal {
-  background-color: #3a606e;
-  width: 550px;
-  top: 100px;
-  margin-left: -195px;
-  color: white;
-  padding: 24px 24px;
-  font-size: 14pt;
-  max-height: 400px;
-  overflow: auto;
-}
-
-.cardsInSale .title {
-  font-size: 14pt;
-  color: #19647e;
-}
-
-.cardsInSale .finishSale {
-  margin: 20px 0 20px auto;
+.sellSearch {
   display: flex;
+  gap: 10px;
+  margin: 8px 0 18px;
 }
 
-.searchContainer {
-  text-align: center;
-}
-
-.searchContainer .MuiTextField-root {
+.sellSearch .MuiTextField-root {
   width: 400px;
   max-width: 100%;
+}
+
+/* A search hit: the version's art beside its details and physical copies —
+   staff match the card in their hand by picture, then pick the copy by its
+   address. */
+.sellResult {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.sellResultArt {
+  width: 70px;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+
+.sellResultBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.sellResultHead {
+  border-bottom: none;
+}
+
+/* One physical copy: its address, and the button that rings it up. */
+.sellCopy {
+  border-bottom: none;
+  padding: 2px 0 2px 12px;
+  justify-content: space-between;
+}
+
+.cardsInSale {
+  margin-top: 28px;
+}
+
+.sellTotal {
+  font-weight: 700;
+  text-align: right;
+  margin: 10px 0;
 }

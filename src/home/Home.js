@@ -4,10 +4,15 @@ import Loader from "../loader/Loader";
 import { useNavigate } from "react-router-dom";
 import "./home.css";
 import { accessAPI, logout } from "../utils/fetchFunctions";
+import MatchQueue from "../orders/MatchQueue";
+import RefileQueue from "../orders/RefileQueue";
 
+// The first screen of a shift. It opens on the match queue because that is
+// the work nobody triggered and nobody would otherwise look for: cards on the
+// shelf right now that answer a customer's wish, waiting to be pulled into
+// their bag.
 export default function Home() {
   const [loader, setLoader] = useState(true);
-  const [player, setPlayer] = useState(null);
 
   const navigate = useNavigate();
 
@@ -18,10 +23,7 @@ export default function Home() {
       "GET",
       "admin/me",
       null,
-      (response) => {
-        setPlayer(response);
-        setLoader(false);
-      },
+      () => setLoader(false),
       (response) => {
         logout();
         navigate("login");
@@ -36,7 +38,10 @@ export default function Home() {
         {loader && <Loader />}
         {!loader && (
           <>
-            <div className="">{player.name}</div>
+            {/* Cards to put back first: until they are refiled, the shelf is
+                wrong about what it holds. */}
+            <RefileQueue />
+            <MatchQueue />
           </>
         )}
       </div>

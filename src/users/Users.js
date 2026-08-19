@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "../utils/toast";
 import Header from "../header/Header";
+import Title from "../elementos/Title";
 import Loader from "../loader/Loader";
 import { useNavigate } from "react-router-dom";
 import texts from "../data/texts";
@@ -36,7 +38,7 @@ export default function Users() {
       },
       (response) => {
         // A staff member reaching this page gets the same 403 the API gives.
-        alert(response.message);
+        toast(response.message);
         navigate("/home");
       }
     );
@@ -66,9 +68,9 @@ export default function Users() {
       { role },
       () => {
         load();
-        alert(texts.ROLE_SAVED_OK);
+        toast(texts.ROLE_SAVED_OK);
       },
-      (response) => alert(response.message)
+      (response) => toast(response.message)
     );
   }
 
@@ -78,7 +80,7 @@ export default function Users() {
       {loader && <Loader color="blue" />}
       {!loader && (
         <div className="usersContainer">
-          <div className="title">{texts.USERS_TITLE}</div>
+          <Title title={texts.USERS_TITLE} />
           <div className="usersHint">{texts.USERS_HINT}</div>
 
           <div className="userTable">

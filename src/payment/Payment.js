@@ -1,91 +1,136 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
+import { toast } from "../utils/toast";
 import Header from "../header/Header";
+import Title from "../elementos/Title";
 import Loader from "../loader/Loader";
 import { useNavigate } from "react-router-dom";
 import "./payment.css";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import texts from "../data/texts";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
+import Checkbox from "@mui/material/Checkbox";
+import Chip from "@mui/material/Chip";
+import Collapse from "@mui/material/Collapse";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableRow from "@mui/material/TableRow";
+import Typography from "@mui/material/Typography";
 
+const money = (value) => `U$S ${Number(value).toFixed(2)}`;
+
+function formatDate(seconds) {
+  const date = new Date(seconds * 1000);
+  return (
+    String(date.getDate()).padStart(2, "0") +
+    "/" +
+    String(date.getMonth() + 1).padStart(2, "0") +
+    "/" +
+    date.getFullYear()
+  );
+}
+
+// What the store owes, card by card, grouped by consignor.
+//
+// Paying is selecting the cards being settled and confirming — the amount is
+// the sum of their remaining nets, never a number typed by hand, so the
+// ledger can only ever say what actually happened. A "parcial" chip marks a
+// sale partly consumed as store credit: only its remainder is owed.
 export default function Payment() {
   const [loader, setLoader] = useState(true);
-  const [player, setPlayer] = useState(null);
-  const [collections, setCollections] = useState([]);
+  const [groups, setGroups] = useState([]);
+  // Selected sale ids, across all groups.
+  const [selected, setSelected] = useState(() => new Set());
+  const [paying, setPaying] = useState(false);
+  // Which groups are open. Everyone starts collapsed: the page's first answer
+  // is "who do I owe and how much", and the card-by-card detail is on demand.
+  const [expanded, setExpanded] = useState(() => new Set());
 
   const navigate = useNavigate();
 
-  const ammountRef = useRef(null);
-  const collectionRef = useRef(null);
-
-  // On load, fetch player data
-  useEffect(() => {
+  function load() {
     accessAPI(
       "GET",
-      "admin/me",
+      "admin/payment/owed",
       null,
       (response) => {
-        setPlayer(response);
-      },
-      (response) => {
-        // If there is a problem with the player, sign them out and navigate to login
-        alert(response.message);
-        logout();
-        navigate("/login");
-      }
-    );
-
-    accessAPI(
-      "GET",
-      "collection/all",
-      null,
-      (response) => {
-        setCollections(response);
-      },
-      (response) => {
-        // If there is a problem with the player, sign them out and navigate to login
-        alert(response.message);
-        logout();
-        navigate("/login");
-      }
-    );
-  }, [navigate]);
-
-  // When  the player and the collections are loaded, turn off the loader
-  useEffect(() => {
-    if (player && collections) {
-      setLoader(false);
-    }
-  }, [player, collections]);
-
-  // Function tiggered by the process payment button
-  function processPayment() {
-    // Verifies that the player selected something
-    if (
-      !ammountRef.current.value ||
-      !collectionRef.current.value ||
-      collectionRef.current.value === "DEFAULT"
-    ) {
-      return false;
-    }
-
-    setLoader(true);
-    accessAPI(
-      "POST",
-      "admin/payment",
-      JSON.stringify({
-        collectionId: collectionRef.current.value,
-        ammount: ammountRef.current.value,
-      }),
-      (response) => {
-        alert(texts.PAYMENT_PROCESSED);
+        setGroups(response ?? []);
+        setSelected(new Set());
         setLoader(false);
       },
       (response) => {
-        // If there is a problem with the player, sign them out and navigate to login
-        alert(response.message);
+        toast(response.message);
         logout();
         navigate("/login");
+      }
+    );
+  }
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function toggleExpanded(collectionid) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(collectionid)) next.delete(collectionid);
+      else next.add(collectionid);
+      return next;
+    });
+  }
+
+  function toggle(id) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleGroup(group) {
+    const ids = group.sales.map((sale) => sale.id);
+    const allIn = ids.every((id) => selected.has(id));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const id of ids) {
+        if (allIn) next.delete(id);
+        else next.add(id);
+      }
+      return next;
+    });
+  }
+
+  // The amount about to change hands in one group: the sum of the selected
+  // rows' remainders.
+  function selectedTotal(group) {
+    return group.sales
+      .filter((sale) => selected.has(sale.id))
+      .reduce((sum, sale) => sum + Number(sale.remaining), 0);
+  }
+
+  function pay(group) {
+    const ids = group.sales
+      .map((sale) => sale.id)
+      .filter((id) => selected.has(id));
+    if (!ids.length) return;
+    setPaying(true);
+    accessAPI(
+      "POST",
+      "admin/payment",
+      { saleids: ids },
+      (response) => {
+        setPaying(false);
+        toast(`${texts.PAYMENT_PROCESSED} (${money(response.paid)})`, "success");
+        load();
+      },
+      (response) => {
+        setPaying(false);
+        toast(response.message);
       }
     );
   }
@@ -97,38 +142,208 @@ export default function Payment() {
         {loader && <Loader />}
         {!loader && (
           <>
-            <div className="paymentFormContainer">
-              <div className="title">{texts.PAYMENT_TITLE}</div>
-              <div className="inputContainer">
-                <TextField
-                  type="number"
-                  placeholder={texts.AMMOUNT_PLACEHOLDER}
-                  inputRef={ammountRef}
-                />
-              </div>
-              <div className="inputContainer">
-                <TextField select SelectProps={{ native: true }}
-                  name="account"
-                  id="account"
-                  defaultValue="DEFAULT"
-                  inputRef={collectionRef}
-                >
-                  <option value="DEFAULT" disabled>
-                    {texts.SELECT_USER}
-                  </option>
-                  {collections.map((collection) => {
-                    return (
-                      <option value={collection.id} key={collection.id}>
-                        {collection.name}
-                      </option>
-                    );
-                  })}
-                </TextField>
-              </div>
-              <Button onClick={processPayment}>
-                {texts.ACCEPT}
-              </Button>
-            </div>
+            <Title title={texts.PAYMENT_TITLE} subtitle={texts.PAYMENT_HINT} />
+
+            {!groups.length && (
+              <Typography color="text.secondary">
+                {texts.NOTHING_OWED}
+              </Typography>
+            )}
+
+            {groups.map((group) => {
+              const ids = group.sales.map((sale) => sale.id);
+              const allIn = ids.every((id) => selected.has(id));
+              const someIn = ids.some((id) => selected.has(id));
+              const total = selectedTotal(group);
+              const open = expanded.has(group.collectionid);
+              return (
+                <Box key={group.collectionid} sx={{ mb: 2 }}>
+                  {/* The whole header toggles the group open; the controls on
+                      it (checkbox, pay) stop the click so ticking cards does
+                      not slam the drawer shut. */}
+                  <Box
+                    onClick={() => toggleExpanded(group.collectionid)}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.5,
+                      mb: 0.5,
+                      cursor: "pointer",
+                      "&:hover": { backgroundColor: "action.hover" },
+                      borderRadius: 1,
+                    }}
+                  >
+                    <ExpandMoreIcon
+                      fontSize="small"
+                      sx={{
+                        transform: open ? "none" : "rotate(-90deg)",
+                        transition: "transform 150ms",
+                        color: "text.secondary",
+                      }}
+                    />
+                    {/* A settled account has nothing to select or pay — it is
+                        here for its history. */}
+                    {group.sales.length > 0 && (
+                      <Checkbox
+                        size="small"
+                        checked={allIn}
+                        indeterminate={someIn && !allIn}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={() => toggleGroup(group)}
+                      />
+                    )}
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                      {group.name}
+                    </Typography>
+                    {group.sales.length > 0 ? (
+                      <Typography variant="body2" color="text.secondary">
+                        {texts.OWES} {money(group.owed)}
+                      </Typography>
+                    ) : (
+                      <Chip size="small" color="success" variant="outlined"
+                        label={texts.SETTLED}
+                      />
+                    )}
+                    {group.sales.length > 0 && (
+                      <Button
+                        size="small"
+                        sx={{ ml: "auto" }}
+                        disabled={paying || total <= 0}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          pay(group);
+                        }}
+                      >
+                        {texts.PAY_SELECTED} ({money(total)})
+                      </Button>
+                    )}
+                  </Box>
+                  <Collapse in={open} timeout="auto" unmountOnExit>
+                  {group.sales.length > 0 && (
+                  <TableContainer>
+                    <Table size="small">
+                      <TableBody>
+                        {group.sales.map((sale) => (
+                          <TableRow
+                            key={sale.id}
+                            hover
+                            onClick={() => toggle(sale.id)}
+                            sx={{ cursor: "pointer" }}
+                          >
+                            <TableCell padding="checkbox">
+                              <Checkbox
+                                size="small"
+                                checked={selected.has(sale.id)}
+                              />
+                            </TableCell>
+                            <TableCell sx={{ width: 100 }}>
+                              {formatDate(sale.date)}
+                            </TableCell>
+                            <TableCell>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1.5,
+                                }}
+                              >
+                                {sale.image && (
+                                  <Box
+                                    component="img"
+                                    src={sale.image}
+                                    alt={sale.name}
+                                    loading="lazy"
+                                    sx={{
+                                      width: 32,
+                                      height: 45,
+                                      borderRadius: 0.5,
+                                    }}
+                                  />
+                                )}
+                                <Box>
+                                  <Typography
+                                    variant="body2"
+                                    sx={{ fontWeight: 600 }}
+                                  >
+                                    {sale.quantity > 1 && `${sale.quantity}× `}
+                                    {sale.name}
+                                  </Typography>
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                  >
+                                    {sale.cardsetname}
+                                  </Typography>
+                                </Box>
+                                {sale.partial && (
+                                  <Chip
+                                    size="small"
+                                    color="warning"
+                                    variant="outlined"
+                                    label={texts.PARTIAL}
+                                  />
+                                )}
+                              </Box>
+                            </TableCell>
+                            <TableCell
+                              align="right"
+                              sx={{ width: 130, fontWeight: 600 }}
+                            >
+                              {money(sale.remaining)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                  )}
+
+                  {/* What has already been settled, newest first — so a
+                      "did I pay them last week?" question is answered right
+                      where the paying happens. Credit rows are marked: that
+                      money was spent on cards, not handed over. Same table
+                      dress as the owed cards above, so the two read as one
+                      statement. */}
+                  {group.payments.length > 0 && (
+                    <Box sx={{ mt: 2 }}>
+                      <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
+                        sx={{ fontWeight: 700, mb: 0.5 }}
+                      >
+                        {texts.PAYMENT_HISTORY}
+                      </Typography>
+                      <TableContainer>
+                        <Table size="small">
+                          <TableBody>
+                            {group.payments.map((payment) => (
+                              <TableRow key={payment.id} hover>
+                                <TableCell sx={{ width: 148 }}>
+                                  {formatDate(payment.date)}
+                                </TableCell>
+                                <TableCell>
+                                  {payment.kind === "credit" && (
+                                    <Chip
+                                      size="small"
+                                      variant="outlined"
+                                      label={texts.PAID_AS_CREDIT}
+                                    />
+                                  )}
+                                </TableCell>
+                                <TableCell align="right" sx={{ width: 130 }}>
+                                  {money(payment.ammount)}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </Box>
+                  )}
+                  </Collapse>
+                </Box>
+              );
+            })}
           </>
         )}
       </div>

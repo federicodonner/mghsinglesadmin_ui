@@ -1,0 +1,35 @@
+.cardImage img {
+  width: 200px;
+  border-radius: 8px;
+}
+
+/* Kept tall enough to be observable even between loads, so the infinite
+   scroll always has something to intersect. */
+.versionsSentinel {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Finish is a separate control rather than another version tile: nonfoil and
+   foil share a printing and therefore share an image. Etched usually has its
+   own printing, so it shows up as its own tile instead. */
+.finishPicker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.finishOption {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.onlyFinish {
+  color: #777;
+  font-size: 0.9em;
+}

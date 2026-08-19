@@ -1,13 +1,24 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "../utils/toast";
+import { confirmDialog } from "../utils/confirm";
 import Header from "../header/Header";
 import Loader from "../loader/Loader";
 import { useNavigate } from "react-router-dom";
 import texts from "../data/texts";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
+import Title from "../elementos/Title";
+import SideForm from "../elementos/SideForm";
 import "./orders.css";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+
+const money = (value) => `U$S ${Number(value).toFixed(2)}`;
 
 function formatDate(seconds) {
   if (!seconds) return "";
@@ -27,18 +38,18 @@ function formatDate(seconds) {
 export default function Orders() {
   const [loader, setLoader] = useState(true);
   const [orders, setOrders] = useState([]);
-  const [demand, setDemand] = useState([]);
-  const [matches, setMatches] = useState([]);
   // Where the cards from a just-cancelled bag have to go back to.
   const [refile, setRefile] = useState(null);
-  // Which copy the shop is taking, per match, when there is more than one.
-  const [chosen, setChosen] = useState({});
   const [pendingOnly, setPendingOnly] = useState(true);
+  // The charge sidebar: {order, credit} while it is open, credit null while
+  // the customer's balance is still loading.
+  const [charging, setCharging] = useState(null);
+  const [method, setMethod] = useState("cash");
 
   const navigate = useNavigate();
 
   function bail(response) {
-    alert(response.message);
+    toast(response.message);
     logout();
     navigate("/login");
   }
@@ -54,41 +65,12 @@ export default function Orders() {
       },
       bail
     );
-    accessAPI(
-      "GET",
-      "admin/match",
-      null,
-      (response) => setMatches(response),
-      () => setMatches([])
-    );
-    accessAPI(
-      "GET",
-      "admin/wishlist",
-      null,
-      (response) => setDemand(response),
-      () => setDemand([])
-    );
   }
 
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  function actOnMatch(match, action, confirmText) {
-    if (confirmText && !window.confirm(confirmText)) return;
-    accessAPI(
-      "POST",
-      `admin/match/${match.id}/${action}`,
-      // Tell the API which copy was physically taken, so a later cancellation
-      // refiles it where it actually came from.
-      action === "setaside" && chosen[match.id]
-        ? { placementid: chosen[match.id] }
-        : null,
-      () => load(),
-      (response) => alert(response.message)
-    );
-  }
 
   // One line of "where the card is", in the terms that container supports.
   function locationLabel(location) {
@@ -103,20 +85,60 @@ export default function Orders() {
     return location.storagename;
   }
 
-  function act(order, action, confirmText) {
-    if (confirmText && !window.confirm(confirmText)) return;
+  async function act(order, action, confirmText, body) {
+    if (confirmText && !(await confirmDialog(confirmText))) return;
     accessAPI(
       "POST",
       `admin/order/${order.id}/${action}`,
-      null,
+      body ?? null,
       (response) => {
         // Cancelling empties a bag, so say where each card goes back. Shown as
         // a panel rather than an alert, which would be dismissed and lost
         // before anyone had walked to the shelf.
         if (response?.refile?.length) setRefile(response.refile);
+        // Paying with credit reports the split, so the till knows what cash
+        // to actually take.
+        if (response?.creditused !== undefined) {
+          toast(
+            `${response.message} ${texts.CREDIT_USED} ${money(response.creditused)}` +
+              (Number(response.cashdue) > 0
+                ? ` · ${texts.CASH_DUE} ${money(response.cashdue)}`
+                : ""),
+            "success"
+          );
+        }
+        setCharging(null);
         load();
       },
-      (response) => alert(response.message)
+      (response) => toast(response.message)
+    );
+  }
+
+  // Charging an order with a customer behind it opens the sidebar: cash, or
+  // the credit the store owes them for their own sold cards. Counter bags and
+  // all-withdrawal bags have nothing to choose, so they keep the plain
+  // confirmation.
+  function startCharge(order) {
+    if (!order.player || Number(order.total) <= 0) {
+      act(order, "complete", texts.CONFIRM_COMPLETE);
+      return;
+    }
+    setMethod("cash");
+    setCharging({ order, credit: null });
+    accessAPI(
+      "GET",
+      `admin/credit/${order.player.id}`,
+      null,
+      (response) =>
+        setCharging((current) =>
+          current?.order.id === order.id
+            ? { ...current, credit: Number(response.credit) }
+            : current
+        ),
+      () =>
+        setCharging((current) =>
+          current?.order.id === order.id ? { ...current, credit: 0 } : current
+        )
     );
   }
 
@@ -130,115 +152,8 @@ export default function Orders() {
       {loader && <Loader color="blue" />}
       {!loader && (
         <div className="ordersContainer">
-          {/* Placed above the order queue deliberately: this is the work the
-              shop would otherwise never notice, since a match appears without
-              anyone doing anything. */}
-          <div className="ordersHead">
-            <span className="title">{texts.MATCHES_TITLE}</span>
-            {matches.length > 0 && (
-              <span className="matchBadge">
-                {matches.reduce((n, p) => n + p.matches.length, 0)}
-              </span>
-            )}
-          </div>
-          <div className="demandHint">{texts.MATCHES_HINT}</div>
-          {!matches.length && (
-            <div className="emptyState">{texts.NO_MATCHES}</div>
-          )}
-          {matches.map((person) => (
-            <div className="matchCard" key={person.playerid}>
-              <div className="matchPlayer">
-                {texts.BAG_FOR} {person.name}
-              </div>
-              {person.matches.map((match) => (
-                <div className="matchBlock" key={match.id}>
-                <div className="matchRow">
-                  {match.image && (
-                    <img className="matchThumb" src={match.image} alt={match.name} />
-                  )}
-                  <span className="lineName">{match.name}</span>
-                  <span className="lineSet">
-                    {(match.cardsetcode ?? "").toUpperCase()}
-                  </span>
-                  <span className="lineMeta">{match.condition}</span>
-                  <span className="lineMeta">{match.language}</span>
-                  {isFoil(match.variant) && (
-                    <span className="lineMeta">{finishLabel(match.variant)}</span>
-                  )}
-                  {/* A withdrawal is the customer's own consigned card: it goes
-                      in the bag but nothing is charged for it. */}
-                  <span
-                    className={
-                      match.kind === "withdrawal"
-                        ? "matchKind withdrawal"
-                        : "matchKind purchase"
-                    }
-                    title={
-                      match.kind === "withdrawal"
-                        ? texts.MATCH_WITHDRAWAL_HINT
-                        : undefined
-                    }
-                  >
-                    {match.kind === "withdrawal"
-                      ? texts.MATCH_WITHDRAWAL
-                      : texts.MATCH_PURCHASE}
-                  </span>
-                  <span className="linePrice">
-                    {match.kind === "withdrawal"
-                      ? "—"
-                      : `U$S ${match.price ?? "?"}`}
-                  </span>
-                  <Button size="small"
-                    onClick={() => actOnMatch(match, "setaside")}
-                  >
-                    {texts.SET_ASIDE}
-                  </Button>
-                  <Button variant="outlined" color="error" size="small"
- onClick={() =>
- actOnMatch(match, "dismiss", texts.CONFIRM_DISMISS_MATCH)
- }
- >
-                    {texts.DISMISS_MATCH}
-                  </Button>
-                </div>
-
-                {/* Where to actually go and get this one. Two rows can share a
-                    card name, so this has to sit with its own row. */}
-                <div className="matchWhere">
-                  <span className="matchWhereLabel">{texts.WHERE_IS_IT}:</span>
-                  {!match.locations.length && (
-                    <span className="matchNoLocation">{texts.NO_LOCATION}</span>
-                  )}
-                  {match.locations.length === 1 && (
-                    <span>{locationLabel(match.locations[0])}</span>
-                  )}
-                  {/* Several copies on the shelf: the shop says which one they
-                      took, so a cancellation refiles the right one. */}
-                  {match.locations.length > 1 && (
-                    <TextField select SelectProps={{ native: true }}
-                      value={chosen[match.id] ?? match.locations[0].placementid}
-                      onChange={(e) =>
-                        setChosen({
-                          ...chosen,
-                          [match.id]: parseInt(e.target.value, 10),
-                        })
-                      }
-                    >
-                      {match.locations.map((location) => (
-                        <option
-                          value={location.placementid}
-                          key={location.placementid}
-                        >
-                          {locationLabel(location)}
-                        </option>
-                      ))}
-                    </TextField>
-                  )}
-                </div>
-                </div>
-              ))}
-            </div>
-          ))}
+          {/* The match queue lives on Home now — it is the first thing a
+              shift should see, not an appendix to the order list. */}
 
           {/* Left on screen until dismissed: it is a physical to-do. */}
           {refile && (
@@ -260,37 +175,41 @@ export default function Orders() {
             </div>
           )}
 
-          <div className="ordersHead ordersHeadSpaced">
-            <span className="title">{texts.ORDERS_TITLE}</span>
-            <Button variant="outlined" size="small"
-              onClick={() => setPendingOnly(!pendingOnly)}
-            >
-              {pendingOnly ? texts.SHOW_ALL : texts.SHOW_PENDING}
-            </Button>
-          </div>
+          <Title
+            title={texts.ORDERS_TITLE}
+            buttons={[
+              {
+                label: pendingOnly ? texts.SHOW_ALL : texts.SHOW_PENDING,
+                variant: "outlined",
+                onClick: () => setPendingOnly(!pendingOnly),
+              },
+            ]}
+          />
 
           {!shown.length && <div className="emptyState">{texts.NO_ORDERS}</div>}
 
           {shown.map((order) => (
             <div className={`orderCard ${order.status}`} key={order.id}>
               <div className="orderHeader">
-                <span className={`orderStatus ${order.status}`}>
-                  {texts[`ORDER_STATUS_${order.status}`] ?? order.status}
-                </span>
-                <span className="orderPlayer">{order.player?.name}</span>
-                <span className="orderDate">{formatDate(order.created)}</span>
-                {order.status === "pending" && order.expires && (
-                  <span className="orderExpires">
-                    {texts.ORDER_EXPIRES} {formatDate(order.expires)}
+                {/* A pending card IS the pick-up list, so "Reservado" and the
+                    date said nothing; status and date only matter for history
+                    rows, where they tell closed orders apart. */}
+                {order.status !== "pending" && (
+                  <span className={`orderStatus ${order.status}`}>
+                    {texts[`ORDER_STATUS_${order.status}`] ?? order.status}
                   </span>
+                )}
+                {/* A bag with nobody behind it was rung up at the till. */}
+                <span className="orderPlayer">
+                  {order.player?.name ?? texts.SELL_TITLE}
+                </span>
+                {order.status !== "pending" && (
+                  <span className="orderDate">{formatDate(order.created)}</span>
                 )}
                 <span className="orderTotal">
                   {texts.ORDER_TOTAL} U$S {order.total}
                 </span>
               </div>
-
-              {order.note && <div className="orderNote">{order.note}</div>}
-
               <div className="orderLines">
                 {order.lines.map((line) => (
                   <div className="orderLine" key={line.id}>
@@ -312,17 +231,8 @@ export default function Orders() {
               {/* Only a live reservation can be acted on. */}
               {order.status === "pending" && (
                 <div className="orderActions">
-                  <Button
-                    onClick={() =>
-                      act(order, "complete", texts.CONFIRM_COMPLETE)
-                    }
-                  >
+                  <Button onClick={() => startCharge(order)}>
                     {texts.COMPLETE_ORDER}
-                  </Button>
-                  <Button variant="outlined"
-                    onClick={() => act(order, "extend")}
-                  >
-                    {texts.EXTEND_ORDER}
                   </Button>
                   <Button variant="outlined" color="error"
  onClick={() =>
@@ -336,36 +246,70 @@ export default function Orders() {
             </div>
           ))}
 
-          {/* What customers are asking for — the list to read before taking
-              cards on consignment. */}
-          <div className="title demandTitle">{texts.DEMAND_TITLE}</div>
-          <div className="demandHint">{texts.DEMAND_HINT}</div>
-          {!demand.length && <div className="emptyState">{texts.NO_DEMAND}</div>}
-          {demand.map((entry) => (
-            <div className="demandRow" key={entry.name}>
-              <span className="demandName">{entry.name}</span>
-              <span className="demandCount">
-                {texts.WANTED_BY} {entry.wanted}
-              </span>
-              <span className="demandWanters">{entry.wanters.join(", ")}</span>
-              {/* A customer whose filters nothing on the shelf satisfies is the
-                  actionable case, so it is called out separately from the raw
-                  stock count. */}
-              {entry.unsatisfied.length > 0 && (
-                <span className="demandStock out">
-                  {texts.UNSATISFIED}: {entry.unsatisfied.join(", ")}
-                </span>
-              )}
-              {entry.unsatisfied.length === 0 && (
-                <span className="demandStock in">{texts.SATISFIED}</span>
-              )}
-              <span className="demandCount">
-                {texts.IN_STOCK_COUNT}: {entry.inStock}
-              </span>
-            </div>
-          ))}
         </div>
       )}
+
+      {/* How is this order being paid: cash across the counter, or the credit
+          the store owes this customer for their own sold cards. Credit covers
+          what it can and the sidebar says the cash remainder up front, so
+          nobody discovers it at the till. */}
+      <SideForm
+        open={Boolean(charging)}
+        onClose={() => setCharging(null)}
+        title={texts.CHARGE_TITLE}
+      >
+        {charging && (
+          <Stack spacing={2}>
+            <Typography variant="body2">
+              {charging.order.player?.name} — {texts.ORDER_TOTAL}{" "}
+              <strong>{money(charging.order.total)}</strong>
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {texts.CREDIT_AVAILABLE}{" "}
+              {charging.credit === null ? "…" : money(charging.credit)}
+            </Typography>
+            <RadioGroup
+              value={method}
+              onChange={(e) => setMethod(e.target.value)}
+            >
+              <FormControlLabel
+                value="cash"
+                control={<Radio size="small" />}
+                label={texts.PAY_CASH}
+              />
+              <FormControlLabel
+                value="credit"
+                control={<Radio size="small" />}
+                disabled={!charging.credit}
+                label={texts.PAY_WITH_CREDIT}
+              />
+            </RadioGroup>
+            {method === "credit" && charging.credit !== null && (
+              <Box>
+                <Typography variant="body2">
+                  {texts.CREDIT_USED}{" "}
+                  {money(Math.min(charging.credit, Number(charging.order.total)))}
+                </Typography>
+                {Number(charging.order.total) > charging.credit && (
+                  <Typography variant="body2">
+                    {texts.CASH_DUE}{" "}
+                    {money(Number(charging.order.total) - charging.credit)}
+                  </Typography>
+                )}
+              </Box>
+            )}
+            <Button
+              onClick={() =>
+                act(charging.order, "complete", null, {
+                  paywithcredit: method === "credit",
+                })
+              }
+            >
+              {texts.COMPLETE_ORDER}
+            </Button>
+          </Stack>
+        )}
+      </SideForm>
     </div>
   );
 }

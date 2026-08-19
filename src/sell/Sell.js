@@ -1,178 +1,152 @@
 import React, { useState, useEffect, useRef } from "react";
+import { toast } from "../utils/toast";
+import { confirmDialog } from "../utils/confirm";
 import { useNavigate } from "react-router-dom";
 import Header from "../header/Header";
-import SellSearchResult from "./SellSearchResult";
-import CardInSale from "./CardInSale";
+import Title from "../elementos/Title";
+import CardNameAutocomplete from "../elementos/CardNameAutocomplete";
 import Loader from "../loader/Loader";
 import "./sell.css";
+import "../orders/orders.css";
 import { accessAPI, logout } from "../utils/fetchFunctions";
+import { isFoil, finishLabel } from "../utils/finishes";
+import { locationLabel } from "../utils/locationLabel";
 import texts from "../data/texts";
-import whiteLoader from "../images/whiteLoader.svg";
 import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
 
+// A sale over the counter, on the same rails as a reservation.
+//
+// Searching hits the LIVE store stock — the same availability the storefront
+// shows, so a copy in somebody's pick-up bag cannot be rung up twice. Adding a
+// card moves a physical copy into a bag: a pending order with no customer
+// behind it, because the person at the till may not have an account. Cobrar
+// writes the sale rows that credit each card's owner; cancelling flags every
+// copy for the refile panel on the home page.
 export default function Sell() {
-  const [loader, setLoader] = useState(false);
+  const [loader, setLoader] = useState(true);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [searchLoader, setSearchLoader] = useState(false);
-  const [searchResults, setSearchResults] = useState(null);
-  const [cardsInSale, setCardsInSale] = useState([]);
-  const [cardsInSalePreviousLength, setCardsInSalePreviousLength] = useState(0);
+  const [searching, setSearching] = useState(false);
+  const [results, setResults] = useState(null);
+  // The open counter bag — the sale in progress. Server state, not component
+  // state: reloading the page finds the bag exactly as it was.
+  const [bag, setBag] = useState(null);
 
   let navigate = useNavigate();
+  // What is typed in the search field right now, for the Buscar button; the
+  // autocomplete searches directly when a suggestion is picked.
+  const nameRef = useRef("");
 
-  const cardRef = useRef(null);
-  // When the component loads, verify if the user is loaded
   useEffect(() => {
     accessAPI(
       "GET",
       "admin/me",
       null,
-      (response) => {
-        // If the response is 200, means the user is logged in
-        setLoggedIn(true);
-      },
-      (response) => {
-        // If the user is not logged in, turn off the loader
+      () => setLoggedIn(true),
+      () => {
         logout();
         navigate("/");
       }
     );
-  }, [navigate]);
-
-  // Every time the cards in sale updates, select the search bar
-  useEffect(() => {
-    // If the number of cards in the sale changed, set the focus
-    // This is necesary because the state updates when prices or quantity change
-    if (cardsInSalePreviousLength !== cardsInSale.length) {
-      cardRef.current.focus();
-      cardRef.current.select();
-    }
-    setCardsInSalePreviousLength(cardsInSale.length);
-  }, [cardsInSale, cardsInSalePreviousLength]);
-
-  // Function triggerd when a card is searched
-  function findCard(e) {
-    // Prevent the default form submnit;
-    e.preventDefault();
-    setSearchLoader(true);
     accessAPI(
       "GET",
-      "admin/cards/search?q=" + encodeURIComponent(cardRef.current.value),
+      "admin/countersale",
       null,
       (response) => {
-        // If there are cards in the reponse, show the options
-        if (response.cards) {
-          setSearchLoader(false);
-          // If there is only one card, add it to the sale
-          if (response.cards.length === 1) {
-            var cardsInSaleForEdit = JSON.parse(JSON.stringify(cardsInSale));
-            response.cards[0].saleQuantity = 1;
-            cardsInSaleForEdit.push(response.cards[0]);
-            console.log(cardsInSaleForEdit);
-            setCardsInSale(cardsInSaleForEdit);
-          } else {
-            console.log(response.cards);
-            setSearchResults(response.cards);
-          }
-        }
+        setBag(response);
+        setLoader(false);
       },
       (response) => {
-        if (response.status === 404) {
-          alert(response.message);
-          setSearchLoader(false);
-          cardRef.current.focus();
-          cardRef.current.select();
-        } else {
-          navigate("/login");
-        }
+        toast(response.message);
+        setLoader(false);
+      }
+    );
+  }, [navigate]);
+
+  function search(name) {
+    if (!name) return;
+    setSearching(true);
+    accessAPI(
+      "GET",
+      `admin/countersale/search?name=${encodeURIComponent(name)}`,
+      null,
+      (response) => {
+        setResults(response.cards ?? []);
+        setSearching(false);
+      },
+      (response) => {
+        toast(response.message);
+        setResults(null);
+        setSearching(false);
       }
     );
   }
 
-  // Function triggered from child components to select a card
-  function selectCard(card) {
-    var cardsInSaleForEdit = JSON.parse(JSON.stringify(cardsInSale));
-    card.saleQuantity = 1;
-    cardsInSaleForEdit.push(card);
-    setCardsInSale(cardsInSaleForEdit);
-
-    // Clears the search results to hide the modal
-    setSearchResults(null);
-    setSearchLoader(false);
+  function findCard(e) {
+    e.preventDefault();
+    search(nameRef.current.trim());
   }
 
-  // Function triggered from child component to delete a card from list
-  function deleteCard(cardId) {
-    setCardsInSale(cardsInSale.filter((card) => card.id !== cardId));
-  }
-
-  // Function triggered by the price update of a card
-  function updatePrice(cardId, newPrice) {
-    setCardsInSale(
-      cardsInSale.map((card) => {
-        if (card.id === cardId) {
-          card.price = newPrice;
-        }
-        return card;
-      })
-    );
-  }
-
-  // Function triggered by the quantity update of a card
-  function updateQuantity(cardId, newQuantity) {
-    setCardsInSale(
-      cardsInSale.map((card) => {
-        if (card.id === cardId) {
-          card.saleQuantity = newQuantity;
-        }
-        return card;
-      })
-    );
-  }
-
-  // Function to send the sale to the server and register it
-  function processSale() {
-    setLoader(true);
-    var cardMissingPrice = false;
-    // Verify that every card has a price
-    // Copy the array to edit it and store it in state
-    cardsInSale.forEach((card, index) => {
-      if (!card.price) {
-        cardMissingPrice = true;
-      }
-    });
-    if (cardMissingPrice) {
-      setLoader(false);
-      return false;
-    }
-
+  // Ring up the copy the person actually pulled off the shelf. The placement
+  // id pins that exact copy, so its pocket stops offering it and a later
+  // cancellation refiles it to the right place.
+  function addCard(card, copy) {
     accessAPI(
       "POST",
-      "admin/sale",
-      JSON.stringify({ soldCards: cardsInSale }),
+      "admin/countersale/add",
+      copy ? { cardid: card.id, placementid: copy.placementid } : { cardid: card.id },
       (response) => {
-        // If the sale is successful, display a message and refresh
-        setLoader(false);
-        alert(response.message);
-        setSearchResults(null);
-        setCardsInSale([]);
-      },
-      (response) => {
-        // If there was a login problem, logout the user and take them to login
-        if (response.status === 401 || response.status === 403) {
-          logout();
-          navigate("/");
-        }
-        // If the sale failed for other reason, show the error and return
-        // If there is a card indicated in the error, show the name
-        alert(
-          response.card
-            ? response.message + " - " + response.card.cardName
-            : response.message
+        setBag(response);
+        // The copy is in the bag now; the on-screen list follows.
+        setResults(
+          (rows) =>
+            rows?.map((row) =>
+              row.id === card.id
+                ? {
+                    ...row,
+                    available: row.available - 1,
+                    copies: copy
+                      ? row.copies.filter(
+                          (c) => c.placementid !== copy.placementid
+                        )
+                      : row.copies,
+                  }
+                : row
+            ) ?? null
         );
-        setLoader(false);
-      }
+      },
+      (response) => toast(response.message)
+    );
+  }
+
+  async function complete() {
+    if (!(await confirmDialog(texts.CONFIRM_COMPLETE))) return;
+    accessAPI(
+      "POST",
+      `admin/order/${bag.id}/complete`,
+      null,
+      (response) => {
+        toast(response.message, "success");
+        setBag(null);
+        setResults(null);
+      },
+      (response) => toast(response.message)
+    );
+  }
+
+  async function cancel() {
+    if (!(await confirmDialog(texts.CONFIRM_CANCEL_SALE))) return;
+    accessAPI(
+      "POST",
+      `admin/order/${bag.id}/cancel`,
+      null,
+      (response) => {
+        toast(response.message);
+        setBag(null);
+        // Availability on screen is stale after a cancel; a fresh search says
+        // the truth.
+        setResults(null);
+      },
+      (response) => toast(response.message)
     );
   }
 
@@ -183,58 +157,118 @@ export default function Sell() {
         {loader && <Loader />}
         {!loader && (
           <>
-            <div className="searchContainer">
-              <form onSubmit={findCard}>
-                <TextField
-                  type="text"
-                  inputRef={cardRef}
-                  placeholder={texts.CARD_NAME}
-                  disabled={searchLoader || loader}
-                />
-                <Button className="search" onClick={findCard}>
-                  {searchLoader && (
-                    <img className="loader" src={whiteLoader} alt="loader" />
-                  )}
-                  {!searchLoader && <span>{texts.SEARCH}</span>}
-                </Button>
-              </form>
-            </div>
-            <div className="cardsInSale">
-              <div className="title">{texts.CARDS_IN_SALE}</div>
-              {cardsInSale.map((card, index) => {
-                return (
-                  <CardInSale
-                    card={card}
-                    key={index}
-                    showBorder={true}
-                    updatePrice={updatePrice}
-                    updateQuantity={updateQuantity}
-                    deleteCard={deleteCard}
-                  />
-                );
-              })}
-              {cardsInSale.length > 0 && (
-                <Button className="finishSale" onClick={processSale}>
-                  {texts.FINISH_SALE}
-                </Button>
-              )}
-            </div>
-          </>
-        )}
+            <Title title={texts.SELL_TITLE} subtitle={texts.SELL_HINT} />
 
-        {searchResults && (
-          <>
-            <div className="modalCover"></div>
-            <div className="sellSelectVersionModal modal">
-              {searchResults.map((card, index) => {
-                return (
-                  <SellSearchResult
-                    key={index}
-                    card={card}
-                    selectCard={selectCard}
+            <form className="sellSearch" onSubmit={findCard}>
+              <CardNameAutocomplete
+                freeSolo
+                stockOnly
+                autoFocus
+                placeholder={texts.CARD_NAME}
+                onSearch={search}
+                onInputChange={(next) => {
+                  nameRef.current = next;
+                }}
+                disabled={searching}
+              />
+              <Button type="submit" disabled={searching}>
+                {texts.SEARCH}
+              </Button>
+            </form>
+
+            {results && !results.length && (
+              <div className="emptyState">{texts.SELL_NO_RESULTS}</div>
+            )}
+            {results?.map((card) => (
+              <div className="sellResult" key={card.id}>
+                {/* The version, seen: at the counter the card is in somebody's
+                    hand, and matching art beats reading a set code. */}
+                {card.image && (
+                  <img
+                    className="sellResultArt"
+                    src={card.image}
+                    alt={card.name}
+                    loading="lazy"
                   />
-                );
-              })}
+                )}
+                <div className="sellResultBody">
+                  <div className="orderLine sellResultHead">
+                    <span className="lineName">{card.name}</span>
+                    <span className="lineSet">
+                      {(card.cardsetcode ?? "").toUpperCase()}
+                    </span>
+                    <span className="lineMeta">{card.condition}</span>
+                    <span className="lineMeta">{card.language}</span>
+                    {isFoil(card.variant) && (
+                      <span className="lineMeta">
+                        {finishLabel(card.variant)}
+                      </span>
+                    )}
+                    {card.owner && (
+                      <span className="lineMeta">{card.owner}</span>
+                    )}
+                    <span className="linePrice">U$S {card.price ?? "?"}</span>
+                  </div>
+                  {/* One row per physical copy: where it sits, so the person
+                      rings up exactly the one they pulled. */}
+                  {card.copies.map((copy) => (
+                    <div className="orderLine sellCopy" key={copy.placementid}>
+                      <span className="lineMeta">{locationLabel(copy)}</span>
+                      <Button size="small"
+                        disabled={card.available < 1}
+                        onClick={() => addCard(card, copy)}
+                      >
+                        {texts.ADD}
+                      </Button>
+                    </div>
+                  ))}
+                  {/* Stock the shop holds but never filed has no pocket to
+                      name; it can still be sold. */}
+                  {!card.copies.length && card.available > 0 && (
+                    <div className="orderLine sellCopy">
+                      <span className="lineMeta">{texts.SELL_NO_LOCATION}</span>
+                      <Button size="small" onClick={() => addCard(card, null)}>
+                        {texts.ADD}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            <div className="cardsInSale">
+              <Title title={texts.CARDS_IN_SALE} />
+              {!bag && <div className="emptyState">{texts.SELL_EMPTY}</div>}
+              {bag && (
+                <>
+                  {bag.lines.map((line) => (
+                    <div className="orderLine" key={line.id}>
+                      <span className="lineQuantity">{line.quantity}</span>
+                      <span className="lineName">{line.name}</span>
+                      <span className="lineSet">
+                        {(line.cardsetcode ?? "").toUpperCase()}
+                      </span>
+                      <span className="lineMeta">{line.condition}</span>
+                      <span className="lineMeta">{line.language}</span>
+                      {isFoil(line.variant) && (
+                        <span className="lineMeta">
+                          {finishLabel(line.variant)}
+                        </span>
+                      )}
+                      <span className="linePrice">U$S {line.price}</span>
+                    </div>
+                  ))}
+                  <div className="sellTotal">
+                    {texts.ORDER_TOTAL} U$S {bag.total}
+                  </div>
+                  <div className="orderActions">
+                    <Button onClick={complete}>{texts.COMPLETE_ORDER}</Button>
+                    <Button variant="outlined" color="error" onClick={cancel}>
+                      {texts.CANCEL_SALE}
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           </>
         )}

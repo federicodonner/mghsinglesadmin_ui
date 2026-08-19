@@ -13,7 +13,6 @@ import { readRole, clearRole, isOwner } from "../utils/role";
 const LINKS = [
   { to: "/sell", label: texts.SELL_CARDS },
   { to: "/orders", label: texts.ORDERS },
-  { to: "/find", label: texts.FIND },
   { to: "/storage", label: texts.STORAGE },
   { to: "/pricing", label: texts.PRICING, ownerOnly: true },
   { to: "/payment", label: texts.PAYMENT, ownerOnly: true },

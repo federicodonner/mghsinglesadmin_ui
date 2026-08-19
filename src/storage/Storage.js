@@ -1,25 +1,32 @@
 import React, { useState, useEffect, useRef } from "react";
+import { toast } from "../utils/toast";
+import { confirmDialog } from "../utils/confirm";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "../header/Header";
+import Title from "../elementos/Title";
+import SideForm from "../elementos/SideForm";
 import Loader from "../loader/Loader";
 import texts from "../data/texts";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import "./storage.css";
 import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import Stack from "@mui/material/Stack";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 
 const TYPE_LABELS = {
   binder: texts.BINDER,
   sorted_box: texts.SORTED_BOX,
   unsorted_box: texts.UNSORTED_BOX,
-};
-
-const STATE_LABELS = {
-  for_sale: texts.STATE_FOR_SALE,
-  retired: texts.STATE_RETIRED,
-  released: texts.STATE_RELEASED,
-  returning: texts.STATE_RETURNING,
 };
 
 // The label for a move depends on where it starts, not just where it lands:
@@ -39,19 +46,34 @@ function moveLabel(from, to) {
   return to;
 }
 
+// The lists, in the order the shop thinks about them: what is on the shelf
+// selling; what an owner asked back (retired — still physically behind the
+// counter, waiting to be collected, which is why those rows still offer
+// actions); what a customer is bringing in; and what is out of the shop's
+// hands entirely. Grouping replaces the per-row state chip: the heading says
+// it once.
+const SECTIONS = [
+  { key: "active", title: texts.STORAGE_ACTIVE, states: ["for_sale"] },
+  { key: "retired", title: texts.STORAGE_RETIRED_LIST, states: ["retired"] },
+  { key: "incoming", title: texts.STORAGE_INCOMING, states: ["returning"] },
+  { key: "away", title: texts.STORAGE_AWAY, states: ["released"] },
+];
+
 export default function Storage() {
   const [loader, setLoader] = useState(true);
   const [units, setUnits] = useState([]);
-  const [collections, setCollections] = useState([]);
+  // The sidebar: null, {mode:"create"} or {mode:"rename", unit}.
+  const [panel, setPanel] = useState(null);
+  // The open per-row actions menu: {anchor, unit} or null.
+  const [menu, setMenu] = useState(null);
 
   const nameRef = useRef(null);
   const typeRef = useRef(null);
-  const ownerRef = useRef(null);
 
   const navigate = useNavigate();
 
   function bail(response) {
-    alert(response.message);
+    toast(response.message);
     logout();
     navigate("/login");
   }
@@ -71,36 +93,40 @@ export default function Storage() {
 
   useEffect(() => {
     load();
-    // The owner dropdown lists collections, since that is how the API exposes
-    // players to the admin app.
-    accessAPI(
-      "GET",
-      "collection/all",
-      null,
-      (response) => setCollections(response),
-      () => setCollections([])
-    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Always the shop's own furniture — a customer's container is created by
+  // the customer from their app, and arrives here by being brought in.
   function createUnit(e) {
     e.preventDefault();
     const name = nameRef.current.value.trim();
     if (!name) return;
-    const owner = ownerRef.current.value;
     accessAPI(
       "POST",
       "storage",
-      {
-        name,
-        type: typeRef.current.value,
-        playerid: owner ? parseInt(owner, 10) : null,
-      },
+      { name, type: typeRef.current.value },
       () => {
-        nameRef.current.value = "";
+        setPanel(null);
         load();
       },
-      (response) => alert(response.message)
+      (response) => toast(response.message)
+    );
+  }
+
+  function renameUnit(e) {
+    e.preventDefault();
+    const name = nameRef.current.value.trim();
+    if (!name) return;
+    accessAPI(
+      "PUT",
+      `storage/${panel.unit.id}`,
+      { name },
+      () => {
+        setPanel(null);
+        load();
+      },
+      (response) => toast(response.message)
     );
   }
 
@@ -116,41 +142,109 @@ export default function Storage() {
       (response) => {
         if (to === "released") {
           const held = response.heldback || [];
-          alert(
-            held.length
-              ? `${texts.HELD_BACK}\n` +
-                  held
-                    .map((c) => `- ${c.name} (#${c.copyindex})`)
-                    .join("\n")
-              : texts.NOTHING_HELD_BACK
-          );
+          // A plain confirmation — unless copies promised to a buyer stay
+          // behind, which whoever hands the binder over has to know.
+          if (held.length) {
+            toast(
+              `${texts.STORAGE_RETURNED} ${texts.HELD_BACK}\n` +
+                held.map((c) => `- ${c.name} (#${c.copyindex})`).join("\n"),
+              "warning"
+            );
+          } else {
+            toast(texts.STORAGE_RETURNED, "success");
+          }
         }
         load();
       },
-      (response) => alert(response.message)
+      (response) => toast(response.message)
     );
   }
 
-  function rename(unit) {
-    const name = window.prompt(texts.RENAME, unit.name);
-    if (!name || !name.trim()) return;
-    accessAPI(
-      "PUT",
-      `storage/${unit.id}`,
-      { name: name.trim() },
-      () => load(),
-      (response) => alert(response.message)
-    );
-  }
-
-  function removeUnit(unit) {
-    if (!window.confirm(texts.CONFIRM_DELETE_STORAGE)) return;
+  async function removeUnit(unit) {
+    if (!(await confirmDialog(texts.CONFIRM_DELETE_STORAGE))) return;
     accessAPI(
       "DELETE",
       `storage/${unit.id}`,
       null,
       () => load(),
-      (response) => alert(response.message)
+      (response) => toast(response.message)
+    );
+  }
+
+  // Every action a row offers, in one flat list for its menu. The API already
+  // decided what is possible (`cando`, `deletable`, released = hands off);
+  // this only presents it.
+  function actionsFor(unit) {
+    const actions = [];
+    if (unit.inshop !== false) {
+      actions.push({
+        label: texts.RENAME,
+        run: () => setPanel({ mode: "rename", unit }),
+      });
+    }
+    for (const to of unit.cando || []) {
+      actions.push({
+        label: moveLabel(unit.state, to),
+        run: () => move(unit, to),
+      });
+    }
+    if (unit.deletable) {
+      actions.push({
+        label: texts.DELETE,
+        color: "error.main",
+        run: () => removeUnit(unit),
+      });
+    }
+    return actions;
+  }
+
+  function section(title, rows) {
+    if (!rows.length) return null;
+    return (
+      <div key={title}>
+        <Typography variant="subtitle1" sx={{ mt: 3, mb: 0.5, fontWeight: 700 }}>
+          {title}
+        </Typography>
+        <TableContainer>
+          <Table size="small">
+            <TableBody>
+              {rows.map((unit) => (
+                <TableRow key={unit.id} hover>
+                  <TableCell>
+                    <Link to={`/storage/${unit.id}`} className="storageName">
+                      {unit.name}
+                    </Link>
+                    <Typography
+                      component="span"
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ ml: 1 }}
+                    >
+                      {TYPE_LABELS[unit.type]}
+                    </Typography>
+                  </TableCell>
+                  <TableCell sx={{ width: 220 }}>
+                    {unit.owner ? unit.owner.name : texts.SHOP}
+                  </TableCell>
+                  <TableCell align="right" sx={{ width: 60 }}>
+                    {actionsFor(unit).length > 0 && (
+                      <IconButton
+                        size="small"
+                        aria-label={texts.ACTIONS}
+                        onClick={(e) =>
+                          setMenu({ anchor: e.currentTarget, unit })
+                        }
+                      >
+                        <MoreVertIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </div>
     );
   }
 
@@ -159,96 +253,97 @@ export default function Storage() {
       <Header showMenu={true} loggedIn={true} />
       {loader && <Loader color="blue" />}
       {!loader && (
-        <div className="storageContainer">
-          <form className="storageForm" onSubmit={createUnit}>
-            <span className="formTitle">{texts.NEW_STORAGE}</span>
-            <TextField
-              type="text"
-              placeholder={texts.STORAGE_NAME}
-              inputRef={nameRef}
-            />
-            <TextField select SelectProps={{ native: true }} inputRef={typeRef} defaultValue="binder">
-              <option value="binder">{texts.BINDER}</option>
-              <option value="sorted_box">{texts.SORTED_BOX}</option>
-              <option value="unsorted_box">{texts.UNSORTED_BOX}</option>
-            </TextField>
-            <TextField select SelectProps={{ native: true }} inputRef={ownerRef} defaultValue="">
-              <option value="">{texts.SHOP}</option>
-              {collections.map((collection) => (
-                <option value={collection.id} key={collection.id}>
-                  {collection.name}
-                </option>
-              ))}
-            </TextField>
-            <Button type="submit">
-              {texts.CREATE}
-            </Button>
-          </form>
+        <div className="content">
+          <Title
+            title={texts.STORAGE_TITLE}
+            buttons={[
+              {
+                label: texts.NEW_STORAGE,
+                onClick: () => setPanel({ mode: "create" }),
+              },
+            ]}
+          />
 
-          <div className="storageList">
-            <div className="title">{texts.STORAGE_TITLE}</div>
-            {units.map((unit) => (
-              <div
-                className={unit.forsale ? "storageRow" : "storageRow away"}
-                key={unit.id}
-              >
-                <Link to={`/storage/${unit.id}`} className="storageName">
-                  {unit.name}
-                </Link>
-                <span className="storageType">{TYPE_LABELS[unit.type]}</span>
-                <span className="storageOwner">
-                  {unit.owner ? unit.owner.name : texts.SHOP}
-                </span>
-                <span className="storageCount">
-                  {unit.cardcount} {texts.CARDS}
-                </span>
-                <Chip
-                  size="small"
-                  variant={unit.forsale ? "filled" : "outlined"}
-                  color={unit.forsale ? "success" : "default"}
-                  label={STATE_LABELS[unit.state]}
-                  className="storageBadge"
-                />
-                {/* Only a customer's container moves, and only along the moves
-                    the API says the shop may make from here. */}
-                {(unit.cando || []).map((to) => (
-                  <Button
- key={to}
- size="small"
- onClick={() => move(unit, to)}
-                  >
-                    {moveLabel(unit.state, to)}
-                  </Button>
-                ))}
-                {/* The shop can only rename what it physically holds — a
-                    released container is the customer's. */}
-                {unit.inshop !== false && (
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => rename(unit)}
-                  >
-                    {texts.RENAME}
-                  </Button>
-                )}
-                {/* Deleting is for the shop's own containers. A customer's is
-                    handed back, never disposed of — the API refuses either way,
-                    so offering the button would only produce an error. */}
-                {unit.deletable && (
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    size="small"
-                    onClick={() => removeUnit(unit)}
-                  >
-                    {texts.DELETE}
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
+          {!units.length && (
+            <Typography color="text.secondary">
+              {texts.NO_CONTAINERS}
+            </Typography>
+          )}
+          {SECTIONS.map(({ title, states }) =>
+            section(
+              title,
+              units.filter((u) => states.includes(u.state))
+            )
+          )}
         </div>
       )}
+
+      {/* One menu for whichever row opened it, so a hundred rows do not mount
+          a hundred menus. */}
+      <Menu
+        anchorEl={menu?.anchor}
+        open={Boolean(menu)}
+        onClose={() => setMenu(null)}
+      >
+        {menu &&
+          actionsFor(menu.unit).map((action) => (
+            <MenuItem
+              key={action.label}
+              sx={action.color ? { color: action.color } : undefined}
+              onClick={() => {
+                setMenu(null);
+                action.run();
+              }}
+            >
+              {action.label}
+            </MenuItem>
+          ))}
+      </Menu>
+
+      {/* The create and rename forms share the sidebar: both are "a small
+          form that should not live in the middle of the list". */}
+      <SideForm
+        open={Boolean(panel)}
+        onClose={() => setPanel(null)}
+        title={panel?.mode === "rename" ? texts.RENAME : texts.NEW_STORAGE}
+      >
+        {panel?.mode === "create" && (
+          <form onSubmit={createUnit}>
+            <Stack spacing={2}>
+              <TextField
+                type="text"
+                label={texts.STORAGE_NAME}
+                inputRef={nameRef}
+                autoFocus
+              />
+              <TextField select SelectProps={{ native: true }}
+                label={texts.STORAGE_TYPE}
+                inputRef={typeRef}
+                defaultValue="binder"
+              >
+                <option value="binder">{texts.BINDER}</option>
+                <option value="sorted_box">{texts.SORTED_BOX}</option>
+                <option value="unsorted_box">{texts.UNSORTED_BOX}</option>
+              </TextField>
+              <Button type="submit">{texts.CREATE}</Button>
+            </Stack>
+          </form>
+        )}
+        {panel?.mode === "rename" && (
+          <form onSubmit={renameUnit}>
+            <Stack spacing={2}>
+              <TextField
+                type="text"
+                label={texts.STORAGE_NAME}
+                inputRef={nameRef}
+                defaultValue={panel.unit.name}
+                autoFocus
+              />
+              <Button type="submit">{texts.SAVE}</Button>
+            </Stack>
+          </form>
+        )}
+      </SideForm>
     </div>
   );
 }

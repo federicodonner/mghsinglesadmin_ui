@@ -1,0 +1,195 @@
+/* The binder editor: two facing pages and the stand-by area beside them. */
+.binderLayout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.binderPages {
+  display: flex;
+  gap: 16px;
+  flex: 1 1 560px;
+  flex-wrap: wrap;
+}
+
+.binderPage {
+  flex: 1 1 260px;
+  min-width: 240px;
+}
+
+.pageNav {
+  align-self: center;
+  font-size: 28px;
+  width: 40px;
+  height: 40px;
+}
+
+/* Spread 0: the slot page 1 faces — the inside of the cover, not a page. */
+.binderPage.pageBlank {
+  background: #f2f2f2;
+  border-radius: 8px;
+  min-height: 200px;
+  align-self: stretch;
+}
+
+.binderPageLabel {
+  display: block;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+/* Nine pockets, three across — the shape of a real binder page. */
+.binderGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 8px;
+  background: #f4f4f4;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.binderPocket {
+  position: relative;
+  aspect-ratio: 5 / 7;
+  border: 1px dashed #c8c8c8;
+  border-radius: 5px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* The drop target lights up, so it is obvious where a card will land. */
+.binderPocket.over {
+  border-color: #f16e31;
+  border-style: solid;
+  box-shadow: inset 0 0 0 2px rgba(241, 110, 49, 0.35);
+}
+
+.pocketEmpty {
+  color: #ccc;
+  font-size: 0.8em;
+}
+
+/* How many cards are in the stack, when it is more than one. In the shop's
+   orange with a white ring so it reads at a glance against any card art. */
+.pocketCount {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  background: #f16e31;
+  color: #fff;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  min-width: 22px;
+  text-align: center;
+  padding: 1px 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.binderCard,
+.binderCard img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.binderCard.dragging {
+  /* The overlay wrapper inherits the SOURCE element's height, which need not
+     match this fixed width — and the img's object-fit: cover crops whatever
+     does not fit. Pin the card's real proportions instead and let the height
+     follow. */
+  width: 70px;
+  height: auto;
+  aspect-ratio: 5 / 7;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+  transform: rotate(2deg);
+}
+
+.binderCardNoArt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2px;
+  background: #eee;
+}
+
+/* ---- stand-by ---------------------------------------------------------- */
+.standbyZone {
+  flex: 0 1 260px;
+  min-width: 220px;
+  padding: 12px;
+  border: 2px dashed #c8c8c8;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.standbyZone.over {
+  border-color: #f16e31;
+  background: #fff6f1;
+}
+
+.standbyCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 8px;
+}
+
+.standbyItem {
+  position: relative;
+}
+
+.standbyItem .binderCard {
+  aspect-ratio: 5 / 7;
+}
+
+/* The card's actions float on the card, lifted off the artwork by a glow so
+   they stay legible whatever is printed behind them. */
+.standbyActions {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 4px;
+  z-index: 2;
+}
+
+.standbyActions .MuiIconButton-root {
+  width: 24px;
+  height: 24px;
+  font-size: 16px;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.55);
+}
+
+.standbyActions .MuiIconButton-root:hover {
+  background: #fff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.95), 0 0 4px rgba(0, 0, 0, 0.4);
+}
+
+/* ---- boxes ------------------------------------------------------------- */
+.boxRow {
+  padding: 8px;
+  border: 1px solid #e6e6e6;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.dragHandle {
+  cursor: grab;
+  color: #aaa;
+  font-size: 1.1rem;
+  padding: 0 2px;
+  touch-action: none;
+  user-select: none;
+}

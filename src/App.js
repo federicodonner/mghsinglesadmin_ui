@@ -5,6 +5,8 @@ import CssBaseline from "@mui/material/CssBaseline";
 import theme from "./theme";
 import Router from "./Router";
 import ErrorBoundary from "./elementos/ErrorBoundary";
+import Toaster from "./elementos/Toaster";
+import Confirmer from "./elementos/Confirmer";
 
 export default function App() {
   return (
@@ -21,6 +23,9 @@ export default function App() {
           <ErrorBoundary>
             <Router />
           </ErrorBoundary>
+          {/* Outside the ErrorBoundary: an error page still gets toasts. */}
+          <Toaster />
+          <Confirmer />
         </BrowserRouter>
       </div>
     </ThemeProvider>

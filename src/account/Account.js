@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
+import { toast } from "../utils/toast";
 import Header from "../header/Header";
+import Title from "../elementos/Title";
 import Loader from "../loader/Loader";
 import { useNavigate } from "react-router-dom";
 import "./account.css";
@@ -35,7 +37,7 @@ export default function Account() {
       },
       (response) => {
         // If there is a problem with the player, sign them out and navigate to login
-        alert(response.message);
+        toast(response.message);
         logout();
         navigate("/login");
       }
@@ -69,10 +71,10 @@ export default function Account() {
         newNameRef.current.value = null;
         newEmailRef.current.value = null;
         setUpdateDetailsLoader(false);
-        alert(texts.UPDATED_DETAILS);
+        toast(texts.UPDATED_DETAILS);
       },
       (response) => {
-        alert(response.message);
+        toast(response.message);
         setUpdateDetailsLoader(false);
         if (response.status === 401 || response.status === 403) {
           logout();
@@ -101,13 +103,13 @@ export default function Account() {
         passwordRef.current.value = null;
         newPasswordRef.current.value = null;
         setUpdatePasswordLoader(false);
-        alert(response.message);
+        toast(response.message);
       },
       (response) => {
         // There are two reasons to fail the response
         // The enterd password is incorrect or the token is not valid
         // If the status is 400 is because the password is incorrect
-        alert(response.message);
+        toast(response.message);
         setUpdatePasswordLoader(false);
         if (response.status !== 400) {
           logout();
@@ -124,7 +126,7 @@ export default function Account() {
         {!loader && (
           <>
             <div className="editDetails">
-              <div className="title">{texts.UPDATE_DETAILS}</div>
+              <Title title={texts.UPDATE_DETAILS} />
               <div className="detailFields">
                 <div className="detailField">
                   <div className="label">{texts.NAME_PLACEHOLDER}</div>
@@ -151,7 +153,7 @@ export default function Account() {
                   {!updateDetailsLoader && <span>{texts.ACCEPT}</span>}
                 </Button>
               </div>
-              <div className="title">{texts.UPDATE_PASSWORD}</div>
+              <Title title={texts.UPDATE_PASSWORD} />
               <div className="detailFields">
                 <div className="detailField">
                   <div className="label">{texts.CURRENT_PASSWORD}</div>

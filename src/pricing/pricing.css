@@ -1,21 +1,6 @@
-.pricingContainer {
-  width: var(--page-width);
-  margin: 0 auto 60px;
-}
+/* The multipliers grid. The fixed-prices half of the page is a MUI Table and
+   styles itself; only this hand-rolled grid needs help. */
 
-.pricingContainer .title {
-  font-size: 1.3em;
-  color: #33586b;
-  margin: 24px 0 6px;
-}
-
-.pricingHint {
-  color: #666;
-  font-size: 0.85em;
-  margin-bottom: 12px;
-}
-
-/* ---- multipliers ------------------------------------------------------ */
 /* Was inline-block, which worked only because the old <button> was
    display:block and forced itself onto the next line. A MUI Button is
    inline-flex, so the table has to claim the row itself. */
@@ -45,72 +30,6 @@
 
 /* Only the column width is ours — padding, border and radius come from the
    theme now, and duplicating them here is what made the fields drift apart. */
-.multiplierRow .MuiTextField-root,
-.priceField .MuiTextField-root {
+.multiplierRow .MuiTextField-root {
   width: 100%;
-}
-
-/* ---- per-card prices --------------------------------------------------- */
-.priceSearchTitle {
-  margin-top: 36px;
-}
-
-.priceSearchForm {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-/* The flex target is the TextField wrapper, not the inner input. */
-.priceSearchForm .MuiTextField-root {
-  flex: 0 1 340px;
-}
-
-.priceRow {
-  display: grid;
-  grid-template-columns: 1fr 140px 140px 140px 100px;
-  gap: 12px;
-  align-items: center;
-  padding: 8px 0;
-  border-top: 1px solid #eee;
-}
-
-.priceRow.head {
-  color: #90a4ae;
-  font-size: 0.85em;
-  border-top: none;
-}
-
-.priceMeta {
-  color: #777;
-  font-size: 0.85em;
-}
-
-.priceField {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-/* A locked price is a deliberate act, so the toggle sits with the number it
-   protects rather than somewhere else on the row. */
-.lockToggle {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.75em;
-  color: #777;
-  cursor: pointer;
-}
-
-.priceReference {
-  color: #33586b;
-  font-size: 0.9em;
-  font-variant-numeric: tabular-nums;
-}
-
-.priceMissing {
-  color: #b0a08a;
-  font-style: italic;
-  font-size: 0.9em;
 }

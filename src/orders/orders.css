@@ -65,12 +65,6 @@
   font-weight: bold;
 }
 
-.orderNote {
-  color: #555;
-  font-style: italic;
-  margin-bottom: 8px;
-}
-
 .orderLine {
   display: flex;
   align-items: center;
@@ -354,4 +348,16 @@
 .refileWhere {
   margin-left: auto;
   color: #33586b;
+}
+
+/* Alternative versions answering the same wish, held together with a caption
+   so bagging one explains why the others withdraw. */
+.matchGroup {
+  margin-bottom: 10px;
+}
+
+.matchAlternativesHint {
+  color: #777;
+  font-size: 0.85em;
+  margin: 6px 0 2px;
 }

@@ -7,7 +7,6 @@ import Account from "./account/Account";
 import Payment from "./payment/Payment";
 import Storage from "./storage/Storage";
 import StorageDetail from "./storage/StorageDetail";
-import Find from "./storage/Find";
 import Orders from "./orders/Orders";
 import Pricing from "./pricing/Pricing";
 import Users from "./users/Users";
@@ -23,7 +22,6 @@ class Router extends React.Component {
         <Route path="/payment" element={<Payment />} />
         <Route path="/storage" element={<Storage />} />
         <Route path="/storage/:storageId" element={<StorageDetail />} />
-        <Route path="/find" element={<Find />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/users" element={<Users />} />
