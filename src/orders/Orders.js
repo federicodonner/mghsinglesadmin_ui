@@ -114,6 +114,24 @@ export default function Orders() {
     );
   }
 
+  // Take one card out of a pending bag. Copies already pulled show up on the
+  // refile panel with their coordinates; the total recomputes from the lines
+  // that remain, and removing the last line cancels the order.
+  async function removeLine(order, line) {
+    if (!(await confirmDialog(texts.CONFIRM_REMOVE_LINE))) return;
+    accessAPI(
+      "DELETE",
+      `admin/order/${order.id}/line/${line.id}`,
+      null,
+      (response) => {
+        if (response?.refile?.length) setRefile(response.refile);
+        toast(response.message, "success");
+        load();
+      },
+      (response) => toast(response.message)
+    );
+  }
+
   // Charging an order with a customer behind it opens the sidebar: cash, or
   // the credit the store owes them for their own sold cards. Counter bags and
   // all-withdrawal bags have nothing to choose, so they keep the plain
@@ -224,6 +242,16 @@ export default function Orders() {
                       <span className="lineMeta">{finishLabel(line.variant)}</span>
                     )}
                     <span className="linePrice">U$S {line.price}</span>
+                    {order.status === "pending" && (
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        onClick={() => removeLine(order, line)}
+                      >
+                        {texts.REMOVE_LINE}
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>

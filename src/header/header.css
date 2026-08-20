@@ -36,3 +36,24 @@
   width: 46px;
   display: block;
 }
+
+/* ---- compact header --------------------------------------------------- */
+/* Small logo left, burger right, partner mark hidden. SAME breakpoint as the
+   menu's useMediaQuery — they must flip together. */
+@media (max-width: 800px) {
+  .headerInner {
+    padding: 6px 0;
+  }
+
+  .singlesLogo {
+    width: 104px;
+  }
+
+  .mghlogoContainer {
+    display: none;
+  }
+
+  .siteHeader {
+    margin-bottom: 14px;
+  }
+}

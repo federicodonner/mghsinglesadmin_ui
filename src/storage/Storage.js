@@ -19,7 +19,10 @@ import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
+import TableSortLabel from "@mui/material/TableSortLabel";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
@@ -62,6 +65,14 @@ const SECTIONS = [
 export default function Storage() {
   const [loader, setLoader] = useState(true);
   const [units, setUnits] = useState([]);
+  const [total, setTotal] = useState(0);
+  // Search, sort and paging all live server-side: a wall of binders should
+  // not travel whole on every visit.
+  const [q, setQ] = useState("");
+  const [sort, setSort] = useState("name");
+  const [dir, setDir] = useState("asc");
+  const [page, setPage] = useState(0);
+  const [limit, setLimit] = useState(25);
   // The sidebar: null, {mode:"create"} or {mode:"rename", unit}.
   const [panel, setPanel] = useState(null);
   // The open per-row actions menu: {anchor, unit} or null.
@@ -81,20 +92,33 @@ export default function Storage() {
   function load() {
     accessAPI(
       "GET",
-      "storage",
+      `storage?page=${page + 1}&limit=${limit}&sort=${sort}&dir=${dir}` +
+        (q.trim() ? `&q=${encodeURIComponent(q.trim())}` : ""),
       null,
       (response) => {
-        setUnits(response);
+        setUnits(response.units ?? []);
+        setTotal(response.total ?? 0);
         setLoader(false);
       },
       bail
     );
   }
 
+  // Typing searches after a pause, not per keystroke.
   useEffect(() => {
-    load();
+    const timer = setTimeout(load, q ? 300 : 0);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [q, sort, dir, page, limit]);
+
+  function toggleSort(column) {
+    if (sort === column) setDir(dir === "asc" ? "desc" : "asc");
+    else {
+      setSort(column);
+      setDir("asc");
+    }
+    setPage(0);
+  }
 
   // Always the shop's own furniture — a customer's container is created by
   // the customer from their app, and arrives here by being brought in.
@@ -171,9 +195,15 @@ export default function Storage() {
     );
   }
 
-  // Every action a row offers, in one flat list for its menu. The API already
-  // decided what is possible (`cando`, `deletable`, released = hands off);
-  // this only presents it.
+  // Receiving a delivery is the everyday action, so it gets its own button on
+  // the row instead of hiding behind the three dots with the rare moves.
+  function isReceive(unit, to) {
+    return unit.state === "returning" && to === "for_sale";
+  }
+
+  // Every SECONDARY action a row offers, in one flat list for its menu. The
+  // API already decided what is possible (`cando`, `deletable`, released =
+  // hands off); this only presents it.
   function actionsFor(unit) {
     const actions = [];
     if (unit.inshop !== false) {
@@ -183,6 +213,7 @@ export default function Storage() {
       });
     }
     for (const to of unit.cando || []) {
+      if (isReceive(unit, to)) continue;
       actions.push({
         label: moveLabel(unit.state, to),
         run: () => move(unit, to),
@@ -207,6 +238,32 @@ export default function Storage() {
         </Typography>
         <TableContainer>
           <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell sortDirection={sort === "name" ? dir : false}>
+                  <TableSortLabel
+                    active={sort === "name"}
+                    direction={sort === "name" ? dir : "asc"}
+                    onClick={() => toggleSort("name")}
+                  >
+                    {texts.COL_CONTAINER}
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell
+                  sx={{ width: 220 }}
+                  sortDirection={sort === "owner" ? dir : false}
+                >
+                  <TableSortLabel
+                    active={sort === "owner"}
+                    direction={sort === "owner" ? dir : "asc"}
+                    onClick={() => toggleSort("owner")}
+                  >
+                    {texts.COL_OWNER}
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{ width: 260 }} />
+              </TableRow>
+            </TableHead>
             <TableBody>
               {rows.map((unit) => (
                 <TableRow key={unit.id} hover>
@@ -226,7 +283,16 @@ export default function Storage() {
                   <TableCell sx={{ width: 220 }}>
                     {unit.owner ? unit.owner.name : texts.SHOP}
                   </TableCell>
-                  <TableCell align="right" sx={{ width: 60 }}>
+                  <TableCell align="right" sx={{ width: 260, whiteSpace: "nowrap" }}>
+                    {(unit.cando || []).some((to) => isReceive(unit, to)) && (
+                      <Button
+                        size="small"
+                        sx={{ mr: 1 }}
+                        onClick={() => move(unit, "for_sale")}
+                      >
+                        {texts.DO_ACCEPT}
+                      </Button>
+                    )}
                     {actionsFor(unit).length > 0 && (
                       <IconButton
                         size="small"
@@ -264,9 +330,20 @@ export default function Storage() {
             ]}
           />
 
+          <TextField
+            size="small"
+            placeholder={texts.STORAGE_SEARCH}
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setPage(0);
+            }}
+            sx={{ mb: 1, width: 320, maxWidth: "100%" }}
+          />
+
           {!units.length && (
-            <Typography color="text.secondary">
-              {texts.NO_CONTAINERS}
+            <Typography color="text.secondary" sx={{ mt: 2 }}>
+              {q ? texts.STORAGE_NO_MATCHES : texts.NO_CONTAINERS}
             </Typography>
           )}
           {SECTIONS.map(({ title, states }) =>
@@ -274,6 +351,22 @@ export default function Storage() {
               title,
               units.filter((u) => states.includes(u.state))
             )
+          )}
+
+          {total > limit && (
+            <TablePagination
+              component="div"
+              count={total}
+              page={page}
+              onPageChange={(e, next) => setPage(next)}
+              rowsPerPage={limit}
+              onRowsPerPageChange={(e) => {
+                setLimit(parseInt(e.target.value, 10));
+                setPage(0);
+              }}
+              rowsPerPageOptions={[25, 50, 100]}
+              labelRowsPerPage={texts.PER_PAGE}
+            />
           )}
         </div>
       )}

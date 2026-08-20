@@ -131,6 +131,17 @@
   border: 2px dashed #c8c8c8;
   border-radius: 8px;
   background: #fafafa;
+  /* Sixty cards in stand-by must not stretch the whole page: the zone stays
+     about as tall as the open binder beside it and scrolls inside itself. */
+  max-height: 480px;
+  display: flex;
+  flex-direction: column;
+}
+
+.standbyZone .standbyCards {
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .standbyZone.over {
@@ -192,4 +203,13 @@
   padding: 0 2px;
   touch-action: none;
   user-select: none;
+}
+
+/* ---- phones ----------------------------------------------------------- */
+/* Spread 0 draws page 1 beside a blank "inside cover"; on a phone the pages
+   stack vertically, and a full-height blank rectangle is dead scroll. */
+@media (max-width: 700px) {
+  .binderPage.pageBlank {
+    display: none;
+  }
 }

@@ -122,7 +122,7 @@ export default function StorageDetail() {
   // to live is exactly what this model does not allow. Warned about first,
   // because it is destructive and not obvious.
   function leave() {
-    if (unit?.editable && standbyCount > 0) {
+    if (unit?.arrangeable && standbyCount > 0) {
       setLeaving(true);
       return;
     }
@@ -164,7 +164,10 @@ export default function StorageDetail() {
                 },
               ]}
               buttons={
-                unit.editable
+                // Adding follows physical possession, like arranging: a
+                // customer walking in with more cards for their consigned
+                // binder hands them over the counter.
+                unit.arrangeable
                   ? [{ label: texts.ADD_CARD, onClick: () => setAdding(true) }]
                   : []
               }

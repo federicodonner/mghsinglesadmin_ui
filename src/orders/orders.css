@@ -332,16 +332,6 @@
   background: #fdf3f2;
 }
 
-/* Same shape as the refile panel — it is the same kind of physical to-do —
-   in amber: fetching a sold card is urgent-ish, not wrong-shelf red. */
-.pullPanel {
-  border: 2px solid #b9770e;
-  border-radius: 6px;
-  padding: 12px 14px;
-  margin: 16px 0;
-  background: #fdf8ef;
-}
-
 .refileTitle {
   font-weight: bold;
   color: #c0392b;

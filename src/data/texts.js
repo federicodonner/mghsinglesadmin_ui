@@ -37,6 +37,7 @@ const texts = {
   BUY: "Comprar",
   LOGIN: "Ingresar",
   LOGOUT: "Salir",
+  MENU: "Menú",
   CREATE_USERNAME: "Nombre de usuario",
   CREATE_NAME: "Nombre completo",
   CREATE_EMAIL: "Email",
@@ -72,7 +73,7 @@ const texts = {
     "Cartas vendidas que todavía no se pagaron. Seleccioná las que estás pagando y confirmá; el monto es la suma exacta.",
   PAYMENT_PROCESSED: "Pago registrado",
   NOTHING_OWED: "No se le debe nada a nadie.",
-  OWES: "Debe:",
+  OWES: "Se le debe:",
   PAY_SELECTED: "Pagar seleccionadas",
   PARTIAL: "Parcial",
   PAYMENT_HISTORY: "Pagos anteriores",
@@ -89,6 +90,11 @@ const texts = {
   ACTIONS: "Acciones",
   SAVE: "Guardar",
   NO_CONTAINERS: "No hay ningún contenedor todavía.",
+  STORAGE_SEARCH: "Buscar por contenedor o dueño",
+  STORAGE_NO_MATCHES: "Ningún contenedor coincide con la búsqueda.",
+  COL_CONTAINER: "Contenedor",
+  COL_OWNER: "Dueño",
+  PER_PAGE: "Por página:",
   BINDER: "Carpeta",
   SORTED_BOX: "Caja ordenada",
   UNSORTED_BOX: "Caja sin ordenar",
@@ -170,10 +176,6 @@ const texts = {
   WHERE_IS_IT: "Dónde está",
   NO_LOCATION: "Sin ubicación registrada",
   PICK_FROM: "Tomar de",
-  PULL_TITLE: "Armar bolsas",
-  PULL_HINT:
-    "Estas cartas ya están reservadas en la bolsa de un cliente. Sacálas de su lugar:",
-  PULL_DONE: "Listo",
   REFILE_TITLE: "Devolver a su lugar",
   REFILE_HINT: "Estas cartas salieron de la bolsa. Vuelve a guardarlas aquí:",
   REFILE_DONE: "Listo",
@@ -194,6 +196,9 @@ const texts = {
   ORDER_TOTAL: "Total",
   COMPLETE_ORDER: "Cobrar y entregar",
   CANCEL_ORDER: "Cancelar",
+  REMOVE_LINE: "Quitar",
+  CONFIRM_REMOVE_LINE:
+    "¿Quitar esta carta del pedido? Vuelve a estar disponible y, si ya estaba apartada, hay que devolverla a su lugar.",
   EXTEND_ORDER: "Extender",
   CONFIRM_COMPLETE: "¿Cobrar y entregar este pedido? Se registrará la venta.",
   CHARGE_TITLE: "Cobrar pedido",
@@ -215,7 +220,7 @@ const texts = {
   STORAGE_LOCKED:
     "Este contenedor está en manos de su dueño; la tienda no puede modificarlo.",
   STORAGE_ARRANGE_ONLY:
-    "Contenedor de un cliente: podés reacomodar las cartas, pero no agregar ni sacar.",
+    "Contenedor de un cliente: podés reacomodarlo y agregarle cartas del cliente, pero no sacarlas.",
   STANDBY_TITLE: "En espera",
   STANDBY_HINT:
     "Arrastrá cartas acá para sacarlas de un bolsillo, y de acá a otro bolsillo.",

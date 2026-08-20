@@ -1,10 +1,18 @@
-import React from "react";
+import React, { useState } from "react";
 import "./menu.css";
 import { NavLink, useNavigate } from "react-router-dom";
 import Button from "@mui/material/Button";
+import Divider from "@mui/material/Divider";
+import Drawer from "@mui/material/Drawer";
+import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import MenuIcon from "@mui/icons-material/Menu";
 import Stack from "@mui/material/Stack";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import texts from "../data/texts";
-import { logout } from "../utils/fetchFunctions";
+import { logout, readFromLS } from "../utils/fetchFunctions";
 import { readRole, clearRole, isOwner } from "../utils/role";
 
 // The routes in the bar, in order. `ownerOnly` marks the ones a shop hand does
@@ -34,12 +42,25 @@ const itemSx = {
 export default function Menu(props) {
   const navigate = useNavigate();
 
+  // Pages report loggedIn only after the session check answers, which left
+  // the bar showing "Ingresar" for a beat on every navigation. A stored token
+  // is a session until the server says otherwise (a 401 logs out and brings
+  // us back here without one), so trust it optimistically.
+  const loggedIn =
+    props.loggedIn || Boolean(readFromLS(process.env.REACT_APP_LS_LOGIN_TOKEN));
+
   // Hiding a menu item is a courtesy, not a control: every owner-only route is
   // gated server-side, so a staff member who types the URL gets a 403 either
   // way. This just stops the app offering doors that will not open.
   const owner = isOwner(readRole());
 
-  if (!props.loggedIn) {
+  // The single compact-layout breakpoint, shared with header.css: below it
+  // the bar becomes a burger AND the header sheds the partner logo — the two
+  // must flip together.
+  const narrow = useMediaQuery("(max-width:800px)");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  if (!loggedIn) {
     return (
       <Stack
         direction="row"
@@ -60,6 +81,51 @@ export default function Menu(props) {
     );
   }
 
+  const visible = LINKS.filter((link) => owner || !link.ownerOnly);
+
+  function doLogout() {
+    logout();
+    clearRole();
+    navigate("/login");
+  }
+
+  if (narrow) {
+    return (
+      <>
+        <IconButton
+          aria-label={texts.MENU}
+          onClick={() => setDrawerOpen(true)}
+          sx={{ color: "#fff", ml: "auto" }}
+        >
+          <MenuIcon />
+        </IconButton>
+        <Drawer
+          anchor="right"
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+        >
+          <List sx={{ width: 230, pt: 2 }}>
+            {visible.map((link) => (
+              <ListItemButton
+                key={link.to}
+                component={NavLink}
+                to={link.to}
+                onClick={() => setDrawerOpen(false)}
+                sx={{ "&.active .MuiListItemText-primary": { fontWeight: 700 } }}
+              >
+                <ListItemText primary={link.label} />
+              </ListItemButton>
+            ))}
+            <Divider sx={{ my: 1 }} />
+            <ListItemButton onClick={doLogout}>
+              <ListItemText primary={texts.LOGOUT} />
+            </ListItemButton>
+          </List>
+        </Drawer>
+      </>
+    );
+  }
+
   return (
     <Stack
       direction="row"
@@ -67,7 +133,7 @@ export default function Menu(props) {
       className="menuContainer"
       spacing={0.5}
     >
-      {LINKS.filter((link) => owner || !link.ownerOnly).map((link) => (
+      {visible.map((link) => (
         <Button
           key={link.to}
           component={NavLink}
@@ -84,11 +150,7 @@ export default function Menu(props) {
         disableRipple
         className="logoutButton"
         sx={itemSx}
-        onClick={() => {
-          logout();
-          clearRole();
-          navigate("/login");
-        }}
+        onClick={doLogout}
       >
         {texts.LOGOUT}
       </Button>
