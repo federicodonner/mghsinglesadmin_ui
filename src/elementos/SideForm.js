@@ -12,11 +12,20 @@ import Typography from "@mui/material/Typography";
 //
 // This only provides the surface — title bar, close affordance, consistent
 // width and padding. Whatever form it is goes in as children, so every sidebar
-// form in the app opens and closes the same way.
-export default function SideForm({ open, onClose, title, children }) {
+// form in the app opens and closes the same way. `width` widens the default
+// 360px surface for content that is a workbench rather than a form — the
+// add-card panel's version rows carry controls that need the room.
+export default function SideForm({ open, onClose, title, width = 360, children }) {
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
-      <Box sx={{ width: { xs: "85vw", sm: 360 }, px: 3, pt: 5, pb: 3 }}>
+      <Box
+        sx={{
+          width: { xs: "94vw", sm: `min(${width}px, 94vw)` },
+          px: 3,
+          pt: 5,
+          pb: 3,
+        }}
+      >
         <Stack
           direction="row"
           alignItems="center"

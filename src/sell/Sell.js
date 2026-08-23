@@ -11,6 +11,7 @@ import "../orders/orders.css";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
 import { locationLabel } from "../utils/locationLabel";
+import { useExchangeRate, dualLive, dualFrozen, formatPesos } from "../utils/exchange";
 import texts from "../data/texts";
 import Button from "@mui/material/Button";
 
@@ -30,6 +31,9 @@ export default function Sell() {
   // The open counter bag — the sale in progress. Server state, not component
   // state: reloading the page finds the bag exactly as it was.
   const [bag, setBag] = useState(null);
+  // Pesos-per-dollar for the LIVE prices in the search results; bag lines
+  // show their own frozen peso snapshot instead.
+  const rate = useExchangeRate();
 
   let navigate = useNavigate();
   // What is typed in the search field right now, for the Buscar button; the
@@ -197,8 +201,6 @@ export default function Sell() {
                     <span className="lineSet">
                       {(card.cardsetcode ?? "").toUpperCase()}
                     </span>
-                    <span className="lineMeta">{card.condition}</span>
-                    <span className="lineMeta">{card.language}</span>
                     {isFoil(card.variant) && (
                       <span className="lineMeta">
                         {finishLabel(card.variant)}
@@ -207,7 +209,7 @@ export default function Sell() {
                     {card.owner && (
                       <span className="lineMeta">{card.owner}</span>
                     )}
-                    <span className="linePrice">U$S {card.price ?? "?"}</span>
+                    <span className="linePrice">{dualLive(card.price, rate)}</span>
                   </div>
                   {/* One row per physical copy: where it sits, so the person
                       rings up exactly the one they pulled. */}
@@ -248,18 +250,20 @@ export default function Sell() {
                       <span className="lineSet">
                         {(line.cardsetcode ?? "").toUpperCase()}
                       </span>
-                      <span className="lineMeta">{line.condition}</span>
-                      <span className="lineMeta">{line.language}</span>
                       {isFoil(line.variant) && (
                         <span className="lineMeta">
                           {finishLabel(line.variant)}
                         </span>
                       )}
-                      <span className="linePrice">U$S {line.price}</span>
+                      <span className="linePrice">
+                        {dualFrozen(line.price, line.pricepesos)}
+                      </span>
                     </div>
                   ))}
                   <div className="sellTotal">
                     {texts.ORDER_TOTAL} U$S {bag.total}
+                    {bag.totalpesos != null &&
+                      ` · ${formatPesos(bag.totalpesos)}`}
                   </div>
                   <div className="orderActions">
                     <Button onClick={complete}>{texts.COMPLETE_ORDER}</Button>

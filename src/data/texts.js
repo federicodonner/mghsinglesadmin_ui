@@ -20,6 +20,10 @@ const texts = {
   ACTIVATE: "Activar",
   SOLD_ON: "Vendida",
   ADD_CARD: "Añadir carta",
+  IMPORT_MANABOX: "Importar de ManaBox",
+  IMPORT_DONE_CARDS: " carta(s) importadas",
+  IMPORT_SKIPPED: " bolsillo(s) vacío(s)",
+  IMPORT_ERRORS: " fila(s) con error",
   CARD_NAME: "Escribe el nombre de la carta",
   SEARCH: "Buscar",
   SELECT_VERSION: "Selecciona la versión de tu carta.",
@@ -145,6 +149,13 @@ const texts = {
   ROLE_YOU: "tú",
   SAVE_ROLE: "Guardar",
   ROLE_SAVED_OK: "Rol actualizado.",
+  EXCHANGE_TITLE: "Tipo de cambio",
+  EXCHANGE_HINT:
+    "Los precios en pesos se calculan multiplicando el precio en dólares por este valor.",
+  EXCHANGE_RATE_LABEL: "Pesos por dólar",
+  EXCHANGE_NOT_SET: "Sin tipo de cambio configurado: se muestran solo dólares.",
+  SAVE_EXCHANGE: "Guardar",
+  EXCHANGE_SAVED: "Tipo de cambio actualizado.",
   MULTIPLIERS_TITLE: "Multiplicadores por estado",
   MULTIPLIERS_HINT:
     "CardKingdom publica un solo precio por carta, que es el de NM. El resto de los estados se calculan multiplicando ese precio.",
@@ -213,7 +224,7 @@ const texts = {
   SHOW_PENDING: "Ver solo reservados",
   VARIANT_nonfoil: "Normal",
   VARIANT_foil: "Foil",
-  VARIANT_etched: "Foil etched",
+  VARIANT_etched: "Etched",
 
   // Container editing — same vocabulary as the customer platform.
   CONTAINER_EMPTY: "Este contenedor está vacío.",
@@ -246,6 +257,7 @@ const texts = {
   NEXT_PAGES: "Páginas siguientes",
   REMOVE_FROM_CONTAINER: "Sacar",
   FILTER_BY_SET: "Filtrar por edición (nombre o código)",
+  FILTER_BY_SET_SHORT: "Edición",
   VERSIONS: "versiones",
   NO_VERSIONS: "Ninguna versión coincide con el filtro.",
   LOADING_VERSIONS: "Cargando versiones...",

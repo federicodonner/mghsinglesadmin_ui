@@ -29,6 +29,7 @@ export default function CardNameAutocomplete({
   stockOnly = false,
   freeSolo = false,
   autoFocus = false,
+  fullWidth = false,
 }) {
   const [input, setInput] = useState("");
   const [options, setOptions] = useState([]);
@@ -96,7 +97,10 @@ export default function CardNameAutocomplete({
       noOptionsText={
         query.length < 2 ? texts.AUTOCOMPLETE_HINT : texts.AUTOCOMPLETE_NONE
       }
-      sx={{ flex: "1 1 320px", maxWidth: 420 }}
+      // Capped in open layouts (the till keeps its 420px field); a sidebar
+      // host asks for the full width so the field and its neighbours form
+      // one edge-to-edge control row.
+      sx={{ flex: "1 1 320px", maxWidth: fullWidth ? "none" : 420 }}
       renderInput={(params) => (
         <TextField
           {...params}

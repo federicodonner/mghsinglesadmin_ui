@@ -9,6 +9,7 @@ import {
 } from "@dnd-kit/core";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -17,6 +18,7 @@ import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import texts from "../data/texts";
+import { isFoil, finishLabel } from "../utils/finishes";
 import { DraggableCard, Pocket, StandbyZone } from "./BinderPieces";
 import "./binder.css";
 
@@ -345,6 +347,13 @@ export default function BinderEditor({
                 <Typography sx={{ flex: 1, fontWeight: 600 }}>
                   {card.name}
                 </Typography>
+                {isFoil(card.variant) && (
+                  <Chip
+                    size="small"
+                    color="secondary"
+                    label={finishLabel(card.variant)}
+                  />
+                )}
                 <Typography variant="caption" color="text.secondary">
                   {card.cardsetname}
                 </Typography>

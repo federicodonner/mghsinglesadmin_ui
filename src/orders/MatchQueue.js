@@ -4,6 +4,7 @@ import { confirmDialog } from "../utils/confirm";
 import texts from "../data/texts";
 import { accessAPI } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
+import { useExchangeRate, dualLive } from "../utils/exchange";
 import "./orders.css";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
@@ -19,6 +20,10 @@ import Title from "../elementos/Title";
 // opening the till, not something buried under the order list.
 export default function MatchQueue() {
   const [matches, setMatches] = useState([]);
+  // Live prices here: nothing is frozen until the copy is actually bagged,
+  // so the pesos shown track today's rate the same way the dollars track
+  // today's card price.
+  const rate = useExchangeRate();
   // Which copy the shop is taking, per match, when there is more than one.
   const [chosen, setChosen] = useState({});
 
@@ -117,8 +122,6 @@ export default function MatchQueue() {
                 <span className="lineSet">
                   {(match.cardsetcode ?? "").toUpperCase()}
                 </span>
-                <span className="lineMeta">{match.condition}</span>
-                <span className="lineMeta">{match.language}</span>
                 {isFoil(match.variant) && (
                   <span className="lineMeta">{finishLabel(match.variant)}</span>
                 )}
@@ -143,7 +146,7 @@ export default function MatchQueue() {
                 <span className="linePrice">
                   {match.kind === "withdrawal"
                     ? "—"
-                    : `U$S ${match.price ?? "?"}`}
+                    : dualLive(match.price, rate)}
                 </span>
                 {/* Stock moved since this match was found — bagged for someone
                     else, sold, or its container went home. Said out loud and

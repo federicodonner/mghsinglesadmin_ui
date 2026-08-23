@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -72,8 +72,6 @@ function Row({ card, sortable, mutate, withdrawable, onRemove, onWithdraw, posit
       <Typography variant="body2" color="text.secondary">
         {card.cardsetname}
       </Typography>
-      <Chip size="small" label={card.condition} />
-      <Chip size="small" variant="outlined" label={card.language} />
       {isFoil(card.variant) && (
         <Chip size="small" color="secondary" label={finishLabel(card.variant)} />
       )}
@@ -126,9 +124,19 @@ export default function BoxEditor({
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
+  // The order on screen, owned locally so a drop lands INSTANTLY: rendering
+  // straight from the prop meant the old order held until the server
+  // round-trip finished, and dnd-kit visibly animated the row back and then
+  // forward again. The prop resyncs this whenever the parent reloads, which
+  // also puts the truth back if a save ever fails.
+  const [ordered, setOrdered] = useState(unit.cards ?? []);
+  useEffect(() => {
+    setOrdered(unit.cards ?? []);
+  }, [unit.cards]);
+
   const cards =
     unit.type === "sorted_box"
-      ? unit.cards ?? []
+      ? ordered
       : (unit.cards ?? [])
           .slice()
           .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
@@ -139,9 +147,13 @@ export default function BoxEditor({
     const from = cards.findIndex((c) => c.placementid === active.id);
     const to = cards.findIndex((c) => c.placementid === over.id);
     if (from < 0 || to < 0) return;
+    const next = arrayMove(cards, from, to);
+    // Screen first, server second: the row must already sit where it was
+    // dropped when the drop animation runs.
+    setOrdered(next);
     // The whole new order goes to the API, not "move item 3 to 7" — the result
     // is then exactly what is on screen.
-    onReorder(arrayMove(cards, from, to).map((c) => c.placementid));
+    onReorder(next.map((c) => c.placementid));
   }
 
   const list = (

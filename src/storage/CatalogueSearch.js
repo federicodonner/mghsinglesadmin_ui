@@ -18,11 +18,11 @@ export default function CatalogueSearch({ onPick }) {
       direction="row"
       spacing={1}
       sx={{ my: 2 }}
-      justifyContent="center"
       flexWrap="wrap"
       useFlexGap
     >
       <CardNameAutocomplete
+        fullWidth
         value={chosen}
         onChange={(name) => {
           setChosen(name);

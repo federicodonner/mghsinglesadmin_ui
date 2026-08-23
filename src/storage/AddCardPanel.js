@@ -2,36 +2,134 @@ import React, { useState, useEffect, useRef } from "react";
 import { toast } from "../utils/toast";
 import "./addCard.css";
 import { accessAPI } from "../utils/fetchFunctions";
-import { finishesFor, finishLabel, DEFAULT_FINISH } from "../utils/finishes";
+import { finishesFor, finishLabel, isFoil, DEFAULT_FINISH } from "../utils/finishes";
 import texts from "../data/texts";
 import CatalogueSearch from "./CatalogueSearch";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import List from "@mui/material/List";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
-import Radio from "@mui/material/Radio";
+import Chip from "@mui/material/Chip";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
 
 // One page of printings. Big enough that most cards fit in one request, small
 // enough that a basic land's 800+ printings stream in as you scroll.
 const VERSIONS_PAGE = 60;
 
-// The add-a-card flow for the shop's own containers, shaped for a sidebar:
-// name autocomplete on top, then the printings of the picked name as compact
-// rows. Picking a row asks for condition, language, quantity and finish, then
-// every copy is filed into the container — a binder's land in stand-by to be
-// dragged into pockets, a box's go straight in. Nothing closes afterwards:
-// adding several cards in a row is the normal case, so the panel stays where
-// the user left it.
+// One printing, ready to add: its own finish choice, quantity and button, so
+// adding is a single click on the row itself — the confirmation dialog this
+// replaced made every add a two-step conversation. Condition and language are
+// not asked for (2026-08-23, the shop's call): a manual add is recorded as NM
+// English by the API.
+//
+// The finish toggle only appears when the printing actually offers a choice.
+// Half of all printings exist in one finish; those state it (a chip when it
+// is a foil worth mentioning, nothing when it is plain nonfoil).
+function VersionRow({ version, onAdd }) {
+  const finishes = finishesFor(version);
+  const [finish, setFinish] = useState(finishes[0] ?? DEFAULT_FINISH);
+  const [quantity, setQuantity] = useState(1);
+  const [adding, setAdding] = useState(false);
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: 1.5,
+        py: 1,
+        borderBottom: "1px solid",
+        borderColor: "divider",
+      }}
+    >
+      {version.image ? (
+        <Box
+          component="img"
+          src={version.image}
+          alt={version.name}
+          loading="lazy"
+          sx={{ width: 40, height: 56, borderRadius: 0.5, flex: "0 0 auto" }}
+        />
+      ) : (
+        <Box
+          sx={{
+            width: 40,
+            height: 56,
+            borderRadius: 0.5,
+            border: "1px dashed #ccc",
+            flex: "0 0 auto",
+          }}
+        />
+      )}
+      <Box sx={{ flex: "1 1 150px", minWidth: 0 }}>
+        <Typography variant="body2" noWrap>
+          {version.cardsetname}
+          {version.cardsetcode && ` (${version.cardsetcode.toUpperCase()})`}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {[
+            version.collectornumber && `#${version.collectornumber}`,
+            version.releasedatyear,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </Typography>
+      </Box>
+      {finishes.length > 1 ? (
+        <ToggleButtonGroup
+          exclusive
+          size="small"
+          value={finish}
+          onChange={(e, next) => next && setFinish(next)}
+        >
+          {finishes.map((option) => (
+            <ToggleButton key={option} value={option} sx={{ px: 1.25 }}>
+              {finishLabel(option)}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+      ) : (
+        isFoil(finishes[0]) && (
+          <Chip size="small" color="secondary" label={finishLabel(finishes[0])} />
+        )
+      )}
+      <TextField
+        select
+        SelectProps={{ native: true }}
+        size="small"
+        value={quantity}
+        onChange={(e) => setQuantity(parseInt(e.target.value, 10))}
+        sx={{ width: 64 }}
+      >
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+          <option key={n} value={n}>
+            {n}
+          </option>
+        ))}
+      </TextField>
+      <Button
+        size="small"
+        disabled={adding}
+        onClick={() => {
+          setAdding(true);
+          onAdd(version, finish, quantity, () => setAdding(false));
+        }}
+      >
+        {texts.ADD}
+      </Button>
+    </Box>
+  );
+}
+
+// The add-a-card flow for the shop's own containers, shaped for a wide
+// sidebar: name autocomplete on top, then the printings of the picked name as
+// rows that each carry their own finish, quantity and add button. Nothing
+// closes afterwards: adding several cards in a row is the normal case, so the
+// panel stays where the user left it.
 //
 // Same flow as the customer's AddCardPanel, on the staff endpoint: the API
 // creates the card in the staff member's collection and places the copy in one
@@ -42,29 +140,6 @@ export default function AddCardPanel({ unit, onAdded }) {
   const [versionsTotal, setVersionsTotal] = useState(0);
   const [setFilter, setSetFilter] = useState("");
   const [versionsLoading, setVersionsLoading] = useState(false);
-  const [selectedVersion, setSelectedVersion] = useState(null);
-  // Which finish of the selected printing is being added.
-  const [selectedFinish, setSelectedFinish] = useState(DEFAULT_FINISH);
-  const [addLoader, setAddLoader] = useState(false);
-  const [conditions, setConditions] = useState(null);
-  const [languages, setLanguages] = useState(null);
-
-  const conditionRef = useRef(null);
-  const languageRef = useRef(null);
-  const quantityRef = useRef(null);
-
-  useEffect(() => {
-    accessAPI(
-      "GET",
-      "card/modifiers",
-      null,
-      (response) => {
-        setConditions(response.conditions);
-        setLanguages(response.languages);
-      },
-      (response) => toast(response.message)
-    );
-  }, []);
 
   // The first page of printings for the picked name and set filter. Debounced
   // because the filter refetches per keystroke; the picked name rides the same
@@ -137,16 +212,9 @@ export default function AddCardPanel({ unit, onAdded }) {
     return () => observer.disconnect();
   }, [chosenName, setFilter, versions.length, versionsTotal, versionsLoading]);
 
-  function selectVersion(version) {
-    setSelectedVersion(version);
-    // Reset to the printing's first available finish — the previous choice may
-    // not even exist for this one.
-    setSelectedFinish(finishesFor(version)[0] ?? DEFAULT_FINISH);
-  }
-
-  // File `remaining` copies into the container, one request at a time.
-  // Sequential rather than fired together: each call assigns the next free
-  // copyindex, so simultaneous requests would race for the same copy.
+  // File `remaining` copies into the container, one request at a time: the
+  // API creates-or-grows the card row and places the new copy in one step, so
+  // simultaneous requests would race for the same copy index.
   function addCopies(body, remaining, done) {
     if (remaining <= 0) {
       done(true);
@@ -164,25 +232,19 @@ export default function AddCardPanel({ unit, onAdded }) {
     );
   }
 
-  function addVersion() {
-    setAddLoader(true);
-    const quantity = parseInt(quantityRef.current.value, 10);
-    // The printing decides what is possible; default to its only finish.
-    const variant = selectedFinish ?? finishesFor(selectedVersion)[0];
+  // Add straight from the row.
+  function addVersion(version, variant, quantity, done) {
     addCopies(
       {
-        scryfallid: selectedVersion.scryfallid,
-        conditionid: conditionRef.current.value,
-        languageid: languageRef.current.value,
+        scryfallid: version.scryfallid,
         variant,
       },
       quantity,
       (ok) => {
-        setSelectedVersion(null);
-        setAddLoader(false);
+        done();
         if (ok) {
           toast(
-            `${quantity}× ${selectedVersion.name} — ${texts.ADDED_TO_CONTAINER} ${unit.name}`,
+            `${quantity}× ${version.name} — ${texts.ADDED_TO_CONTAINER} ${unit.name}`,
             "success"
           );
           onAdded();
@@ -193,63 +255,38 @@ export default function AddCardPanel({ unit, onAdded }) {
 
   return (
     <Box>
-      <CatalogueSearch
-        onPick={(name) => {
-          setChosenName(name);
-          setSetFilter("");
-        }}
-      />
+      {/* One row: the card picker does the heavy lifting and keeps the
+          width; the set filter rides beside it, short — a set name or code
+          is a few characters. Always visible, so a set can be typed before
+          the card is even picked, and the same height as the picker so the
+          two read as one control row. */}
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Box sx={{ flex: "1 1 auto", minWidth: 0 }}>
+          <CatalogueSearch onPick={setChosenName} />
+        </Box>
+        <TextField
+          id="setFilter"
+          label={texts.FILTER_BY_SET_SHORT}
+          value={setFilter}
+          onChange={(e) => setSetFilter(e.target.value)}
+          sx={{ width: 170, flex: "0 0 auto" }}
+        />
+      </Stack>
       {chosenName && (
         <>
-          <Stack spacing={1} sx={{ mb: 1 }}>
-            <TextField
-              id="setFilter"
-              size="small"
-              label={texts.FILTER_BY_SET}
-              value={setFilter}
-              onChange={(e) => setSetFilter(e.target.value)}
-              fullWidth
-            />
-            <Typography variant="caption" color="text.secondary">
-              {versions.length} {texts.OF} {versionsTotal} {texts.VERSIONS}
-            </Typography>
-          </Stack>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+            {versions.length} {texts.OF} {versionsTotal} {texts.VERSIONS}
+          </Typography>
           {!versionsLoading && versionsTotal === 0 && (
             <Alert severity="info">{texts.NO_VERSIONS}</Alert>
           )}
-          <List dense disablePadding>
-            {versions.map((version, index) => (
-              <ListItemButton
-                key={version.scryfallid ?? index}
-                onClick={() => selectVersion(version)}
-                sx={{ px: 0.5, gap: 1 }}
-              >
-                {version.image && (
-                  <Box
-                    component="img"
-                    src={version.image}
-                    alt={version.name}
-                    loading="lazy"
-                    sx={{
-                      width: 32,
-                      height: 45,
-                      borderRadius: 0.5,
-                      flex: "0 0 auto",
-                    }}
-                  />
-                )}
-                <ListItemText
-                  primary={version.cardsetname}
-                  secondary={[
-                    version.collectornumber && `#${version.collectornumber}`,
-                    version.releasedatyear,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                />
-              </ListItemButton>
-            ))}
-          </List>
+          {versions.map((version, index) => (
+            <VersionRow
+              key={version.scryfallid ?? index}
+              version={version}
+              onAdd={addVersion}
+            />
+          ))}
           {/* Watched by an IntersectionObserver: scrolling it into view loads
               the next page of printings. */}
           <div ref={sentinelRef} className="versionsSentinel">
@@ -261,102 +298,6 @@ export default function AddCardPanel({ unit, onAdded }) {
           </div>
         </>
       )}
-
-      <Dialog
-        open={Boolean(selectedVersion && conditions && languages)}
-        onClose={() => !addLoader && setSelectedVersion(null)}
-      >
-        {selectedVersion && conditions && languages && (
-          <>
-            <DialogTitle>{selectedVersion.name}</DialogTitle>
-            <DialogContent>
-              <Stack direction="row" spacing={2} sx={{ pt: 1 }}>
-                <div className="cardImage">
-                  <img src={selectedVersion.image} alt="selected" />
-                </div>
-                <Stack spacing={2} sx={{ minWidth: 190 }}>
-                  <TextField select SelectProps={{ native: true }}
-                    name="conditions"
-                    id="conditions"
-                    label={texts.CONDITION}
-                    inputRef={conditionRef}
-                  >
-                    {conditions.map((condition) => (
-                      <option key={condition.id} value={condition.id}>
-                        {condition.name}
-                      </option>
-                    ))}
-                  </TextField>
-                  <TextField select SelectProps={{ native: true }}
-                    name="languages"
-                    id="languages"
-                    label={texts.LANGUAGE}
-                    inputRef={languageRef}
-                  >
-                    {languages.map((language) => (
-                      <option key={language.id} value={language.id}>
-                        {language.name}
-                      </option>
-                    ))}
-                  </TextField>
-                  <TextField select SelectProps={{ native: true }}
-                    name="quantity"
-                    id="quantity"
-                    label={texts.QUANTITY}
-                    inputRef={quantityRef}
-                  >
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))}
-                  </TextField>
-                  <div className="finishPicker">
-                    {/* Offered finishes come from THIS printing. Half of all
-                        printings exist in only one, and a single option is
-                        stated rather than presented as a choice. */}
-                    {finishesFor(selectedVersion).length === 1 && (
-                      <span className="onlyFinish">
-                        {texts.ONLY_FINISH}{" "}
-                        {finishLabel(finishesFor(selectedVersion)[0])}
-                      </span>
-                    )}
-                    {finishesFor(selectedVersion).length > 1 &&
-                      finishesFor(selectedVersion).map((finish) => (
-                        <FormControlLabel
-                          key={finish}
-                          className="finishOption"
-                          control={
-                            <Radio
-                              size="small"
-                              name="finish"
-                              value={finish}
-                              checked={selectedFinish === finish}
-                              onChange={() => setSelectedFinish(finish)}
-                            />
-                          }
-                          label={finishLabel(finish)}
-                        />
-                      ))}
-                  </div>
-                </Stack>
-              </Stack>
-            </DialogContent>
-            <DialogActions>
-              <Button
-                variant="outlined"
-                disabled={addLoader}
-                onClick={() => setSelectedVersion(null)}
-              >
-                {texts.CANCEL}
-              </Button>
-              <Button loading={addLoader} onClick={addVersion}>
-                {texts.ADD}
-              </Button>
-            </DialogActions>
-          </>
-        )}
-      </Dialog>
     </Box>
   );
 }

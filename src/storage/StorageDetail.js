@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "../utils/toast";
 import { useParams, useNavigate } from "react-router-dom";
 import Alert from "@mui/material/Alert";
@@ -47,6 +47,32 @@ export default function StorageDetail() {
   const [leaving, setLeaving] = useState(false);
   // Whether the add-a-card sidebar is slid out.
   const [adding, setAdding] = useState(false);
+  // The hidden file input behind the "Importar de ManaBox" Title button.
+  const importRef = useRef(null);
+
+  // Read the picked CSV and hand it to the API, which maps rows to pockets
+  // (empty lines skip one) and keeps the scan's condition and language.
+  async function importManaBox(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !unit) return;
+    const csv = await file.text();
+    accessAPI(
+      "POST",
+      `storage/${unit.id}/import`,
+      { csv },
+      (result) => {
+        let message = `${result.added}${texts.IMPORT_DONE_CARDS}`;
+        if (result.skipped > 0)
+          message += ` · ${result.skipped}${texts.IMPORT_SKIPPED}`;
+        if (result.errors.length > 0)
+          message += ` · ${result.errors.length}${texts.IMPORT_ERRORS}`;
+        toast(message, result.errors.length ? undefined : "success");
+        load();
+      },
+      (response) => toast(response.message)
+    );
+  }
 
   const load = useCallback(() => {
     accessAPI(
@@ -168,9 +194,26 @@ export default function StorageDetail() {
                 // customer walking in with more cards for their consigned
                 // binder hands them over the counter.
                 unit.arrangeable
-                  ? [{ label: texts.ADD_CARD, onClick: () => setAdding(true) }]
+                  ? [
+                      { label: texts.ADD_CARD, onClick: () => setAdding(true) },
+                      {
+                        label: texts.IMPORT_MANABOX,
+                        onClick: () => importRef.current?.click(),
+                      },
+                    ]
                   : []
               }
+            />
+
+            {/* The ManaBox button is a file picker: the browse dialog IS the
+                interaction, so the input hides and the Title button clicks
+                it. Resetting value lets the same file be picked twice. */}
+            <input
+              ref={importRef}
+              type="file"
+              accept=".csv,text/csv"
+              style={{ display: "none" }}
+              onChange={importManaBox}
             />
 
             {/* Says why controls are absent, rather than leaving them to be
@@ -230,6 +273,7 @@ export default function StorageDetail() {
           open={adding}
           onClose={() => setAdding(false)}
           title={texts.ADD_CARD}
+          width={720}
         >
           <AddCardPanel unit={unit} onAdded={load} />
         </SideForm>

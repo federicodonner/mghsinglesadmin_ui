@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import texts from "../data/texts";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
+import { dualFrozen, formatPesos } from "../utils/exchange";
 import Title from "../elementos/Title";
 import SideForm from "../elementos/SideForm";
 import "./orders.css";
@@ -226,6 +227,8 @@ export default function Orders() {
                 )}
                 <span className="orderTotal">
                   {texts.ORDER_TOTAL} U$S {order.total}
+                  {order.totalpesos != null &&
+                    ` · ${formatPesos(order.totalpesos)}`}
                 </span>
               </div>
               <div className="orderLines">
@@ -236,12 +239,12 @@ export default function Orders() {
                     <span className="lineSet">
                       {(line.cardsetcode ?? "").toUpperCase()}
                     </span>
-                    <span className="lineMeta">{line.condition}</span>
-                    <span className="lineMeta">{line.language}</span>
                     {isFoil(line.variant) && (
                       <span className="lineMeta">{finishLabel(line.variant)}</span>
                     )}
-                    <span className="linePrice">U$S {line.price}</span>
+                    <span className="linePrice">
+                      {dualFrozen(line.price, line.pricepesos)}
+                    </span>
                     {order.status === "pending" && (
                       <Button
                         variant="outlined"
@@ -290,7 +293,11 @@ export default function Orders() {
           <Stack spacing={2}>
             <Typography variant="body2">
               {charging.order.player?.name} — {texts.ORDER_TOTAL}{" "}
-              <strong>{money(charging.order.total)}</strong>
+              <strong>
+                {money(charging.order.total)}
+                {charging.order.totalpesos != null &&
+                  ` · ${formatPesos(charging.order.totalpesos)}`}
+              </strong>
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {texts.CREDIT_AVAILABLE}{" "}

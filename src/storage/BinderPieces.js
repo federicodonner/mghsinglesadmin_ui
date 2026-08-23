@@ -3,6 +3,8 @@ import { useDraggable, useDroppable } from "@dnd-kit/core";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import texts from "../data/texts";
+import Chip from "@mui/material/Chip";
+import { isFoil, finishLabel } from "../utils/finishes";
 
 // The draggable pieces of the binder editor.
 //
@@ -44,6 +46,17 @@ export function DraggableCard({ card, disabled, onClick, dimmed }) {
         <Box className="binderCardNoArt">
           <Typography variant="caption">{card.name}</Typography>
         </Box>
+      )}
+      {/* A foil (or etched) copy wears the same tag the box list uses, at
+          the bottom centre of the art. Only on the resting tile — the drag
+          overlay is a plain copy, so the tag sits out the animation. */}
+      {isFoil(card.variant) && (
+        <Chip
+          size="small"
+          color="secondary"
+          label={finishLabel(card.variant)}
+          className="foilTag"
+        />
       )}
     </Box>
   );
