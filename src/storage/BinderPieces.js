@@ -77,6 +77,7 @@ export function Pocket({
   onExpand,
   expanded,
   onShift,
+  onEditVersion,
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `pocket-${page}-${pocket}`,
@@ -108,6 +109,24 @@ export function Pocket({
               back or ahead, revealed on hover — the physical gesture of
               making room right here. stopPropagation everywhere: a press
               here must neither start a drag nor open the stack. */}
+          {/* Change this card's version — a pen at the bottom of the
+              card, hover-revealed. Only when the pocket holds a single
+              card: a stack's cards are edited from its dialog. */}
+          {onEditVersion && (
+            <Box className="editVersion">
+              <IconButton
+                size="small"
+                title={texts.CHANGE_VERSION}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditVersion();
+                }}
+              >
+                ✎
+              </IconButton>
+            </Box>
+          )}
           {onShift && (
             <Box className="shiftActions">
               <IconButton

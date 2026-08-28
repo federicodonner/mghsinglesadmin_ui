@@ -28,9 +28,21 @@ const VERSIONS_PAGE = 60;
 // The finish toggle only appears when the printing actually offers a choice.
 // Half of all printings exist in one finish; those state it (a chip when it
 // is a foil worth mentioning, nothing when it is plain nonfoil).
-function VersionRow({ version, onAdd }) {
+function VersionRow({
+  version,
+  onAdd,
+  changing = false,
+  current = false,
+  currentVariant = null,
+}) {
   const finishes = finishesFor(version);
-  const [finish, setFinish] = useState(finishes[0] ?? DEFAULT_FINISH);
+  // In change mode the row for the copy's CURRENT printing starts on its
+  // current finish, so "change only the finish" is one toggle away.
+  const [finish, setFinish] = useState(
+    current && currentVariant && finishes.includes(currentVariant)
+      ? currentVariant
+      : finishes[0] ?? DEFAULT_FINISH
+  );
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
 
@@ -97,20 +109,30 @@ function VersionRow({ version, onAdd }) {
           <Chip size="small" color="secondary" label={finishLabel(finishes[0])} />
         )
       )}
-      <TextField
-        select
-        SelectProps={{ native: true }}
-        size="small"
-        value={quantity}
-        onChange={(e) => setQuantity(parseInt(e.target.value, 10))}
-        sx={{ width: 64 }}
-      >
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-          <option key={n} value={n}>
-            {n}
-          </option>
-        ))}
-      </TextField>
+      {current && (
+        <Chip
+          size="small"
+          variant="outlined"
+          color="success"
+          label={texts.CURRENT_VERSION}
+        />
+      )}
+      {!changing && (
+        <TextField
+          select
+          SelectProps={{ native: true }}
+          size="small"
+          value={quantity}
+          onChange={(e) => setQuantity(parseInt(e.target.value, 10))}
+          sx={{ width: 64 }}
+        >
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </TextField>
+      )}
       <Button
         size="small"
         disabled={adding}
@@ -119,7 +141,7 @@ function VersionRow({ version, onAdd }) {
           onAdd(version, finish, quantity, () => setAdding(false));
         }}
       >
-        {texts.ADD}
+        {changing ? texts.CHOOSE_VERSION : texts.ADD}
       </Button>
     </Box>
   );
@@ -134,12 +156,28 @@ function VersionRow({ version, onAdd }) {
 // Same flow as the customer's AddCardPanel, on the staff endpoint: the API
 // creates the card in the staff member's collection and places the copy in one
 // step, so there is no instant where a card exists with nowhere to be.
-export default function AddCardPanel({ unit, onAdded }) {
+export default function AddCardPanel({
+  unit,
+  onAdded,
+  // Change mode: the panel opens already searched for THIS card, hides the
+  // name picker and quantity, and each row's button hands the chosen
+  // printing+finish to `onChangeVersion` instead of adding a copy.
+  changeTarget = null,
+  onChangeVersion,
+}) {
   const [chosenName, setChosenName] = useState(null);
   const [versions, setVersions] = useState([]);
   const [versionsTotal, setVersionsTotal] = useState(0);
   const [setFilter, setSetFilter] = useState("");
   const [versionsLoading, setVersionsLoading] = useState(false);
+
+  // Change mode arms the search with the card being edited, every time a
+  // different card is picked for editing.
+  useEffect(() => {
+    if (!changeTarget) return;
+    setChosenName(changeTarget.name);
+    setSetFilter("");
+  }, [changeTarget]);
 
   // The first page of printings for the picked name and set filter. Debounced
   // because the filter refetches per keystroke; the picked name rides the same
@@ -262,7 +300,8 @@ export default function AddCardPanel({ unit, onAdded }) {
           two read as one control row. */}
       <Stack direction="row" spacing={1} alignItems="center">
         <Box sx={{ flex: "1 1 auto", minWidth: 0 }}>
-          <CatalogueSearch onPick={setChosenName} />
+          {/* Changing a version is about ONE card; the name is fixed. */}
+          {!changeTarget && <CatalogueSearch onPick={setChosenName} />}
         </Box>
         <TextField
           id="setFilter"
@@ -284,7 +323,15 @@ export default function AddCardPanel({ unit, onAdded }) {
             <VersionRow
               key={version.scryfallid ?? index}
               version={version}
-              onAdd={addVersion}
+              changing={Boolean(changeTarget)}
+              current={changeTarget?.scryfallid === version.scryfallid}
+              currentVariant={changeTarget?.variant ?? null}
+              onAdd={
+                changeTarget
+                  ? (picked, finish, quantity, done) =>
+                      onChangeVersion(picked, finish, done)
+                  : addVersion
+              }
             />
           ))}
           {/* Watched by an IntersectionObserver: scrolling it into view loads

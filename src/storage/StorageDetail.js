@@ -48,6 +48,9 @@ export default function StorageDetail() {
   const [leaving, setLeaving] = useState(false);
   // Whether the add-a-card sidebar is slid out.
   const [adding, setAdding] = useState(false);
+  // The card whose version is being changed — opens the add-card panel in
+  // change mode, pre-searched for that card.
+  const [changing, setChanging] = useState(null);
   // The hidden file input behind the "Importar de ManaBox" Title button.
   const importRef = useRef(null);
   // True from the moment a file is picked until the API answers — a scan of
@@ -125,7 +128,13 @@ export default function StorageDetail() {
       `storage/placement/${placementid}/position`,
       position,
       after,
-      onError
+      // A failed move must also reload: the editor already shows the card in
+      // the pocket it was dropped on, and only fresh server data puts it
+      // back where it really is.
+      (response) => {
+        toast(response.message);
+        load();
+      }
     );
 
   const duplicate = (placementid) =>
@@ -148,6 +157,25 @@ export default function StorageDetail() {
       { page, pocket, placementids },
       after,
       onError
+    );
+
+  // Swap ONE copy's printing/finish for the chosen one; the placement
+  // keeps its exact spot. Closes the change sidebar on success.
+  const changeVersion = (version, variant, done) =>
+    accessAPI(
+      "PUT",
+      `storage/placement/${changing.placementid}/version`,
+      { scryfallid: version.scryfallid, variant },
+      () => {
+        done();
+        setChanging(null);
+        toast(texts.VERSION_CHANGED, "success");
+        load();
+      },
+      (response) => {
+        done();
+        toast(response.message);
+      }
     );
 
   const shiftPage = (page, frompocket, direction) =>
@@ -289,6 +317,7 @@ export default function StorageDetail() {
                 onRemove={remove}
                 onShiftPage={shiftPage}
                 onReorderPocket={reorderPocket}
+                onEditVersion={unit.editable ? setChanging : null}
               />
             ) : (
               <>
@@ -307,6 +336,7 @@ export default function StorageDetail() {
                   withdrawable={false}
                   onRemove={remove}
                   onReorder={reorder}
+                  onEditVersion={unit.editable ? setChanging : null}
                 />
               </>
             )}
@@ -325,6 +355,24 @@ export default function StorageDetail() {
           width={720}
         >
           <AddCardPanel unit={unit} onAdded={load} />
+        </SideForm>
+      )}
+
+      {/* Version change rides the same wide panel, opened in change mode:
+          already searched for the card, one Elegir per printing. */}
+      {unit && (
+        <SideForm
+          open={Boolean(changing)}
+          onClose={() => setChanging(null)}
+          title={texts.CHANGE_VERSION}
+          width={720}
+        >
+          <AddCardPanel
+            unit={unit}
+            onAdded={load}
+            changeTarget={changing}
+            onChangeVersion={changeVersion}
+          />
         </SideForm>
       )}
 

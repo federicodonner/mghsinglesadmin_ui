@@ -23,7 +23,7 @@ import { isFoil, finishLabel } from "../utils/finishes";
 import "./binder.css";
 
 // One row of a box.
-function Row({ card, sortable, mutate, withdrawable, onRemove, onWithdraw, position }) {
+function Row({ card, sortable, mutate, withdrawable, onRemove, onWithdraw, onEditVersion, position }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.placementid, disabled: !sortable });
 
@@ -75,12 +75,22 @@ function Row({ card, sortable, mutate, withdrawable, onRemove, onWithdraw, posit
       {isFoil(card.variant) && (
         <Chip size="small" color="secondary" label={finishLabel(card.variant)} />
       )}
+      {mutate && onEditVersion && (
+        <Button
+          size="small"
+          variant="outlined"
+          sx={{ ml: "auto" }}
+          onClick={() => onEditVersion(card)}
+        >
+          {texts.CHANGE_VERSION}
+        </Button>
+      )}
       {mutate && (
         <Button
           size="small"
           variant="outlined"
           color="error"
-          sx={{ ml: "auto" }}
+          sx={{ ml: mutate && onEditVersion ? 0 : "auto" }}
           onClick={() => onRemove(card.placementid)}
         >
           {texts.REMOVE_FROM_CONTAINER}
@@ -118,6 +128,7 @@ export default function BoxEditor({
   onRemove,
   onReorder,
   onWithdraw,
+  onEditVersion,
 }) {
   const sortable = unit.type === "sorted_box" && arrange;
   const sensors = useSensors(
@@ -167,6 +178,7 @@ export default function BoxEditor({
           withdrawable={withdrawable}
           onRemove={onRemove}
           onWithdraw={onWithdraw}
+          onEditVersion={onEditVersion}
           position={unit.type === "sorted_box" ? index + 1 : null}
         />
       ))}

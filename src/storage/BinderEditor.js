@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -53,6 +53,7 @@ export default function BinderEditor({
   onWithdraw,
   onShiftPage,
   onReorderPocket,
+  onEditVersion,
 }) {
   const [activeCard, setActiveCard] = useState(null);
   const [expanded, setExpanded] = useState(null);
@@ -66,6 +67,17 @@ export default function BinderEditor({
   // their pockets as far as the server knows. Local state on purpose: a
   // reload dropping the lift is the feature, not a bug.
   const [lifted, setLifted] = useState(() => new Set());
+
+  // Where a just-dropped card sits ON SCREEN while its move saves. Without
+  // this the card flashed back to its old pocket between the drop and the
+  // reload — confusing, since the drop looked like it failed. The overrides
+  // clear whenever fresh server data arrives: on success it agrees, and on a
+  // failed move the parent reloads, which snaps the card back (with a toast
+  // saying why).
+  const [movedTo, setMovedTo] = useState(() => new Map());
+  useEffect(() => {
+    setMovedTo(new Map());
+  }, [unit]);
 
   // A few pixels of movement before a drag starts, so clicking a stacked
   // pocket to open it is not read as the beginning of a drag.
@@ -90,24 +102,47 @@ export default function BinderEditor({
   const [desiredPages, setDesiredPages] = useState(0);
 
   const rawPages = (unit.pages ?? []).filter(Boolean);
+  const rawStandby = unit.standby ?? [];
+
+  // Any card, wherever the SERVER has it — pockets or stand-by — for
+  // re-rendering it at an optimistic position.
+  const findRaw = (placementid) =>
+    rawPages
+      .flatMap((page) => page.pockets)
+      .flatMap((pocket) => pocket.cards)
+      .find((c) => c.placementid === placementid) ??
+    rawStandby.find((c) => c.placementid === placementid) ??
+    null;
 
   // Lifted cards leave their pockets on screen and join the stand-by area;
-  // everything below renders from this filtered view.
+  // moved cards render in the pocket they were DROPPED on, not where the
+  // server still has them. Everything below renders from this view.
   const pages = rawPages.map((page) => ({
     ...page,
-    pockets: page.pockets.map((pocket) => ({
-      ...pocket,
-      cards: pocket.cards.filter((c) => !lifted.has(c.placementid)),
-    })),
+    pockets: page.pockets.map((pocket) => {
+      let cards = pocket.cards.filter(
+        (c) => !lifted.has(c.placementid) && !movedTo.has(c.placementid)
+      );
+      for (const [placementid, target] of movedTo) {
+        if (target.page === page.page && target.pocket === pocket.pocket) {
+          const card = findRaw(placementid);
+          if (card) cards = [...cards, card];
+        }
+      }
+      return { ...pocket, cards };
+    }),
   }));
   const liftedCards = rawPages
     .flatMap((page) => page.pockets)
     .flatMap((pocket) => pocket.cards)
     .filter((c) => lifted.has(c.placementid));
   // Persisted stand-by first: those are the cards that genuinely have no
-  // pocket, and the warning on leaving is about them.
-  const persistedStandby = unit.standby ?? [];
-  const persistedIds = new Set(persistedStandby.map((c) => c.placementid));
+  // pocket, and the warning on leaving is about them. A stand-by card
+  // optimistically dropped into a pocket has left this list on screen.
+  const persistedStandby = rawStandby.filter(
+    (c) => !movedTo.has(c.placementid)
+  );
+  const persistedIds = new Set(rawStandby.map((c) => c.placementid));
   // Copies of the same card sit TOGETHER: a duplicate is another copy of the
   // same card row, so slotting each card in after the last one that shares
   // its card id puts a fresh duplicate right next to the one that spawned it
@@ -180,19 +215,34 @@ export default function BinderEditor({
     if (!placementid) return;
 
     if (over.id === "standby") {
-      // A card already waiting there has nothing to lift.
+      // Coming back out of an optimistic pocket drop returns the card to the
+      // stand-by area on screen; a card already waiting there has nothing to
+      // lift.
+      setMovedTo((prev) => {
+        if (!prev.has(placementid)) return prev;
+        const next = new Map(prev);
+        next.delete(placementid);
+        return next;
+      });
       if (!persistedIds.has(placementid)) lift(placementid);
       return;
     }
     const target = over.data.current;
     if (target?.page) {
-      // Dropping into a pocket is the moment the move becomes real.
+      // Dropping into a pocket is the moment the move becomes real — and the
+      // card shows up there IMMEDIATELY, while the save runs behind it.
       setLifted((prev) => {
         if (!prev.has(placementid)) return prev;
         const next = new Set(prev);
         next.delete(placementid);
         return next;
       });
+      setMovedTo((prev) =>
+        new Map(prev).set(placementid, {
+          page: target.page,
+          pocket: target.pocket,
+        })
+      );
       onMove(placementid, { page: target.page, pocket: target.pocket });
     }
   }
@@ -276,6 +326,11 @@ export default function BinderEditor({
                         arrange && onShiftPage
                           ? (direction) =>
                               onShiftPage(page.page, pocket.pocket, direction)
+                          : null
+                      }
+                      onEditVersion={
+                        onEditVersion && pocket.cards.length === 1
+                          ? () => onEditVersion(pocket.cards[0])
                           : null
                       }
                     />
@@ -418,6 +473,15 @@ export default function BinderEditor({
                     last card leaves (nothing left to show), or via the
                     button. Lifting is on-screen only — the card keeps its
                     pocket until it is dropped somewhere else. */}
+                {onEditVersion && (
+                  <IconButton
+                    size="small"
+                    title={texts.CHANGE_VERSION}
+                    onClick={() => onEditVersion(card)}
+                  >
+                    ✎
+                  </IconButton>
+                )}
                 {arrange && onReorderPocket && (
                   <Stack direction="row">
                     <IconButton

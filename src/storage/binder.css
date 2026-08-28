@@ -167,17 +167,20 @@
    they stay legible whatever is printed behind them. */
 .standbyActions {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  /* Centred in the bottom third of the card: the top of the art is what
+     identifies it, and buttons sitting there hid exactly that. */
+  top: 72%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
-  gap: 4px;
+  gap: 8px;
   z-index: 2;
 }
 
 .standbyActions .MuiIconButton-root {
-  width: 24px;
-  height: 24px;
-  font-size: 16px;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
   line-height: 1;
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.55);
@@ -254,5 +257,30 @@
   background: rgba(0, 0, 0, 0.55);
 }
 .binderPocket .shiftActions .MuiIconButton-root:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* The change-version pen: bottom-right of a single-card pocket, revealed on
+   hover, same glow treatment as the shift arrows. Bottom-right so it never
+   sits on the foil tag at the bottom centre. */
+.binderPocket .editVersion {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  display: none;
+  z-index: 2;
+}
+.binderPocket:hover .editVersion {
+  display: flex;
+}
+.binderPocket .editVersion .MuiIconButton-root {
+  width: 22px;
+  height: 22px;
+  font-size: 13px;
+  line-height: 1;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+}
+.binderPocket .editVersion .MuiIconButton-root:hover {
   background: rgba(0, 0, 0, 0.8);
 }
