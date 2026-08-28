@@ -274,7 +274,8 @@ export default function BinderEditor({
                       }}
                       onShift={
                         arrange && onShiftPage
-                          ? (direction) => onShiftPage(page.page, direction)
+                          ? (direction) =>
+                              onShiftPage(page.page, pocket.pocket, direction)
                           : null
                       }
                     />

@@ -104,10 +104,10 @@ export function Pocket({
       {top ? (
         <>
           <DraggableCard card={top} disabled={disabled || cards.length > 1} />
-          {/* Shift the WHOLE page a pocket back or ahead, revealed on hover
-              over any occupied pocket — the physical gesture of making room.
-              stopPropagation everywhere: a press here must neither start a
-              drag nor open the stack. */}
+          {/* Shift THIS card and everything after it on the page a pocket
+              back or ahead, revealed on hover — the physical gesture of
+              making room right here. stopPropagation everywhere: a press
+              here must neither start a drag nor open the stack. */}
           {onShift && (
             <Box className="shiftActions">
               <IconButton
