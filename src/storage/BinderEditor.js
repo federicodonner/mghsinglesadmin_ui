@@ -51,9 +51,16 @@ export default function BinderEditor({
   onDuplicate,
   onRemove,
   onWithdraw,
+  onShiftPage,
+  onReorderPocket,
 }) {
   const [activeCard, setActiveCard] = useState(null);
   const [expanded, setExpanded] = useState(null);
+  // The open pocket's stack in its optimistic order (placement ids, front
+  // first) — set the moment an arrow is clicked so the dialog reorders
+  // instantly instead of after the save round-trip. Reset per pocket; the
+  // parent's reload brings the server's (same) order behind it.
+  const [stackOrder, setStackOrder] = useState(null);
 
   // Placements lifted to the stand-by area ON SCREEN ONLY — still filed in
   // their pockets as far as the server knows. Local state on purpose: a
@@ -100,8 +107,17 @@ export default function BinderEditor({
   // Persisted stand-by first: those are the cards that genuinely have no
   // pocket, and the warning on leaving is about them.
   const persistedStandby = unit.standby ?? [];
-  const standby = [...persistedStandby, ...liftedCards];
   const persistedIds = new Set(persistedStandby.map((c) => c.placementid));
+  // Copies of the same card sit TOGETHER: a duplicate is another copy of the
+  // same card row, so slotting each card in after the last one that shares
+  // its card id puts a fresh duplicate right next to the one that spawned it
+  // instead of at the end of the list.
+  const standby = [];
+  for (const card of [...persistedStandby, ...liftedCards]) {
+    const at = standby.findLastIndex((c) => c.cardid === card.cardid);
+    if (at >= 0) standby.splice(at + 1, 0, card);
+    else standby.push(card);
+  }
 
   const filled = new Map(pages.map((p) => [p.page, p]));
   const pocketsPerPage = pages[0]?.pockets.length ?? 9;
@@ -186,6 +202,27 @@ export default function BinderEditor({
     pages
       .find((p) => p.page === expanded.page)
       ?.pockets.find((k) => k.pocket === expanded.pocket)?.cards;
+  // Depth order, front (visible) first — with the optimistic order applied
+  // over it while a reorder is saving.
+  const orderedExpanded =
+    expandedCards && stackOrder
+      ? [...expandedCards].sort(
+          (a, b) =>
+            stackOrder.indexOf(a.placementid) -
+            stackOrder.indexOf(b.placementid)
+        )
+      : expandedCards;
+
+  // Swap a stack card with its neighbour and persist the whole new order —
+  // the API takes the full stack, so what is saved is exactly what is shown.
+  function moveInStack(index, delta) {
+    const ids = orderedExpanded.map((c) => c.placementid);
+    const to = index + delta;
+    if (to < 0 || to >= ids.length) return;
+    [ids[index], ids[to]] = [ids[to], ids[index]];
+    setStackOrder(ids);
+    onReorderPocket(expanded.page, expanded.pocket, ids);
+  }
 
   return (
     <DndContext
@@ -231,8 +268,14 @@ export default function BinderEditor({
                         expanded?.page === page.page &&
                         expanded?.pocket === pocket.pocket
                       }
-                      onExpand={() =>
-                        setExpanded({ page: page.page, pocket: pocket.pocket })
+                      onExpand={() => {
+                        setStackOrder(null);
+                        setExpanded({ page: page.page, pocket: pocket.pocket });
+                      }}
+                      onShift={
+                        arrange && onShiftPage
+                          ? (direction) => onShiftPage(page.page, direction)
+                          : null
                       }
                     />
                   ))}
@@ -256,11 +299,13 @@ export default function BinderEditor({
               <DraggableCard card={card} disabled={!arrange} />
               {/* On the card, not under it: the actions belong to the card and
                   the column stays as tall as the card is. Floated with a glow
-                  so they read against whatever artwork is behind them. Only on
-                  cards that genuinely live here — a lifted card is still filed
-                  in its pocket, and duplicate/remove change the collection,
-                  which arranging alone does not permit. */}
-              {mutate && persistedIds.has(card.placementid) && (
+                  so they read against whatever artwork is behind them.
+                  Lifted cards get them too — a lifted card is still filed in
+                  its pocket, but duplicating or removing a copy is about the
+                  copy, not the pocket, and both work by placement id. `mutate`
+                  still gates them: they change the collection, which
+                  arranging alone does not permit. */}
+              {mutate && (
                 <Box className="standbyActions">
                   {/* Duplicating is how somebody who owns three of a printing
                       files three of them without searching three times. */}
@@ -326,10 +371,10 @@ export default function BinderEditor({
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-            {texts.POCKET_EXPAND_HINT}
+            {texts.POCKET_EXPAND_HINT} {texts.POCKET_ORDER_HINT}
           </Typography>
           <Stack spacing={1}>
-            {(expandedCards ?? []).map((card) => (
+            {(orderedExpanded ?? []).map((card, index) => (
               <Stack
                 key={card.placementid}
                 direction="row"
@@ -347,6 +392,16 @@ export default function BinderEditor({
                 <Typography sx={{ flex: 1, fontWeight: 600 }}>
                   {card.name}
                 </Typography>
+                {/* The front of the stack is the card showing in the pocket;
+                    say so instead of leaving the order to be guessed. */}
+                {index === 0 && (
+                  <Chip
+                    size="small"
+                    variant="outlined"
+                    color="success"
+                    label={texts.POCKET_VISIBLE}
+                  />
+                )}
                 {isFoil(card.variant) && (
                   <Chip
                     size="small"
@@ -362,6 +417,26 @@ export default function BinderEditor({
                     last card leaves (nothing left to show), or via the
                     button. Lifting is on-screen only — the card keeps its
                     pocket until it is dropped somewhere else. */}
+                {arrange && onReorderPocket && (
+                  <Stack direction="row">
+                    <IconButton
+                      size="small"
+                      disabled={index === 0}
+                      title={texts.STACK_UP}
+                      onClick={() => moveInStack(index, -1)}
+                    >
+                      ↑
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      disabled={index === (orderedExpanded?.length ?? 1) - 1}
+                      title={texts.STACK_DOWN}
+                      onClick={() => moveInStack(index, 1)}
+                    >
+                      ↓
+                    </IconButton>
+                  </Stack>
+                )}
                 {arrange && (
                   <Button
                     size="small"

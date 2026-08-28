@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "../utils/toast";
 import { useParams, useNavigate } from "react-router-dom";
 import Alert from "@mui/material/Alert";
+import CircularProgress from "@mui/material/CircularProgress";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -49,6 +50,10 @@ export default function StorageDetail() {
   const [adding, setAdding] = useState(false);
   // The hidden file input behind the "Importar de ManaBox" Title button.
   const importRef = useRef(null);
+  // True from the moment a file is picked until the API answers — a scan of
+  // a full binder takes a few seconds, and a page that says nothing reads
+  // as a click that did nothing.
+  const [importing, setImporting] = useState(false);
 
   // Read the picked CSV and hand it to the API, which maps rows to pockets
   // (empty lines skip one) and keeps the scan's condition and language.
@@ -56,12 +61,14 @@ export default function StorageDetail() {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file || !unit) return;
+    setImporting(true);
     const csv = await file.text();
     accessAPI(
       "POST",
       `storage/${unit.id}/import`,
       { csv },
       (result) => {
+        setImporting(false);
         let message = `${result.added}${texts.IMPORT_DONE_CARDS}`;
         if (result.skipped > 0)
           message += ` · ${result.skipped}${texts.IMPORT_SKIPPED}`;
@@ -70,7 +77,13 @@ export default function StorageDetail() {
         toast(message, result.errors.length ? undefined : "success");
         load();
       },
-      (response) => toast(response.message)
+      (response) => {
+        setImporting(false);
+        toast(response.message);
+      },
+      // A big scan legitimately takes a while — the default timeout would
+      // declare failure while the server is still happily importing.
+      { timeout: 180000 }
     );
   }
 
@@ -120,6 +133,28 @@ export default function StorageDetail() {
       "POST",
       `storage/placement/${placementid}/duplicate`,
       null,
+      after,
+      onError
+    );
+
+  // Shift every card on one binder page a pocket ahead or back; the edge
+  // stack is kicked to the stand-by area by the API.
+  // Reorder the stack inside one pocket — the dialog sends the whole new
+  // order, front (visible) card first.
+  const reorderPocket = (page, pocket, placementids) =>
+    accessAPI(
+      "PUT",
+      `storage/${unit.id}/pocket/order`,
+      { page, pocket, placementids },
+      after,
+      onError
+    );
+
+  const shiftPage = (page, direction) =>
+    accessAPI(
+      "POST",
+      `storage/${unit.id}/page/${page}/shift`,
+      { direction },
       after,
       onError
     );
@@ -198,12 +233,24 @@ export default function StorageDetail() {
                       { label: texts.ADD_CARD, onClick: () => setAdding(true) },
                       {
                         label: texts.IMPORT_MANABOX,
-                        onClick: () => importRef.current?.click(),
+                        onClick: () => !importing && importRef.current?.click(),
                       },
                     ]
                   : []
               }
             />
+
+            {/* Working, said out loud: the import processes card by card
+                and a big scan takes seconds. */}
+            {importing && (
+              <Alert
+                icon={<CircularProgress size={18} />}
+                severity="info"
+                sx={{ mb: 2 }}
+              >
+                {texts.IMPORTING_MANABOX}
+              </Alert>
+            )}
 
             {/* The ManaBox button is a file picker: the browse dialog IS the
                 interaction, so the input hides and the Title button clicks
@@ -240,6 +287,8 @@ export default function StorageDetail() {
                 onMove={move}
                 onDuplicate={duplicate}
                 onRemove={remove}
+                onShiftPage={shiftPage}
+                onReorderPocket={reorderPocket}
               />
             ) : (
               <>

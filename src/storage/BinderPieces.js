@@ -1,6 +1,7 @@
 import React from "react";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import texts from "../data/texts";
 import Chip from "@mui/material/Chip";
@@ -75,6 +76,7 @@ export function Pocket({
   expandAny,
   onExpand,
   expanded,
+  onShift,
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `pocket-${page}-${pocket}`,
@@ -102,6 +104,36 @@ export function Pocket({
       {top ? (
         <>
           <DraggableCard card={top} disabled={disabled || cards.length > 1} />
+          {/* Shift the WHOLE page a pocket back or ahead, revealed on hover
+              over any occupied pocket — the physical gesture of making room.
+              stopPropagation everywhere: a press here must neither start a
+              drag nor open the stack. */}
+          {onShift && (
+            <Box className="shiftActions">
+              <IconButton
+                size="small"
+                title={texts.SHIFT_BACK}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onShift("back");
+                }}
+              >
+                ←
+              </IconButton>
+              <IconButton
+                size="small"
+                title={texts.SHIFT_AHEAD}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onShift("ahead");
+                }}
+              >
+                →
+              </IconButton>
+            </Box>
+          )}
           {cards.length > 1 && (
             <Box className="pocketCount" title={texts.POCKET_STACK}>
               {cards.length}

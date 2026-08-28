@@ -229,3 +229,30 @@
   font-size: 11px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
+
+/* The page-shift arrows: revealed by hovering an occupied pocket, floating
+   at the top of the card with the same glow treatment as the stand-by
+   actions so they read on any artwork. */
+.binderPocket .shiftActions {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  gap: 2px;
+  z-index: 2;
+}
+.binderPocket:hover .shiftActions {
+  display: flex;
+}
+.binderPocket .shiftActions .MuiIconButton-root {
+  width: 22px;
+  height: 22px;
+  font-size: 14px;
+  line-height: 1;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+}
+.binderPocket .shiftActions .MuiIconButton-root:hover {
+  background: rgba(0, 0, 0, 0.8);
+}

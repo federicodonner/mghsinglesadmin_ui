@@ -22,7 +22,10 @@ export function logout() {
 
 // Access API
 // With timeout specified in .env
-export function accessAPI(verb, endpoint, data, callbackSuccess, callbackFail) {
+// `options.timeout` overrides the configured request timeout for calls that
+// legitimately take long — a ManaBox import processes a whole binder's scan
+// card by card.
+export function accessAPI(verb, endpoint, data, callbackSuccess, callbackFail, options = {}) {
   const url = process.env.REACT_APP_API_URL + "/" + endpoint;
 
   var accessToken = readFromLS(process.env.REACT_APP_LS_LOGIN_TOKEN);
@@ -48,7 +51,7 @@ export function accessAPI(verb, endpoint, data, callbackSuccess, callbackFail) {
     new Promise(function (resolve, reject) {
       setTimeout(
         () => reject(new Error("request timeout")),
-        process.env.REACT_APP_API_TIMEOUT
+        options.timeout ?? process.env.REACT_APP_API_TIMEOUT
       );
     }),
   ])
