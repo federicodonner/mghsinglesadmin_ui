@@ -15,8 +15,26 @@ export function deleteFromLS(key) {
   return localStorage.removeItem(key);
 }
 
-// Operations for logging out the user
+// Operations for logging out the user.
+//
+// Tell the server to destroy this token BEFORE dropping it locally, so a
+// logout actually ends the session instead of only forgetting it in this
+// browser (the token used to stay valid in the database forever). Best-effort
+// and fire-and-forget: the local removal must happen even if the network call
+// fails, so the user is never stuck "logged in" on a flaky connection.
 export function logout() {
+  const token = localStorage.getItem(process.env.REACT_APP_LS_LOGIN_TOKEN);
+  if (token) {
+    try {
+      fetch(process.env.REACT_APP_API_URL + "/oauth", {
+        method: "DELETE",
+        headers: { Authorization: "Bearer " + token },
+        keepalive: true,
+      }).catch(() => {});
+    } catch (e) {
+      /* ignore — local removal below is what matters */
+    }
+  }
   localStorage.removeItem(process.env.REACT_APP_LS_LOGIN_TOKEN);
 }
 
