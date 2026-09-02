@@ -18,13 +18,16 @@ import { readRole, clearRole, isOwner } from "../utils/role";
 // The routes in the bar, in order. `ownerOnly` marks the ones a shop hand does
 // not get. Keeping them as data rather than a dozen near-identical JSX blocks
 // is what stops one of them quietly drifting out of step with the others.
+// staff and owner both do everything now (2026-09-02, Federico), so nothing is
+// ownerOnly. The `visible` filter and role plumbing stay in place so specific
+// items can be re-restricted later by marking them `ownerOnly: true` again.
 const LINKS = [
   { to: "/sell", label: texts.SELL_CARDS },
   { to: "/orders", label: texts.ORDERS },
   { to: "/storage", label: texts.STORAGE },
-  { to: "/pricing", label: texts.PRICING, ownerOnly: true },
-  { to: "/payment", label: texts.PAYMENT, ownerOnly: true },
-  { to: "/users", label: texts.USERS, ownerOnly: true },
+  { to: "/pricing", label: texts.PRICING },
+  { to: "/payment", label: texts.PAYMENT },
+  { to: "/users", label: texts.USERS },
   { to: "/account", label: texts.MY_ACCOUNT },
 ];
 

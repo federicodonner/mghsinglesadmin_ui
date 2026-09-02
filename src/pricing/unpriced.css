@@ -1,0 +1,25 @@
+/* Rows in the home page's "sin precio" panel — a thumbnail, the card's name
+   and set, its stock count, and a set-price button. Reuses the refilePanel
+   shell from orders.css. */
+.unpricedRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-top: 1px solid #eee;
+}
+
+.unpricedThumb {
+  width: 30px;
+  height: 42px;
+  object-fit: cover;
+  border-radius: 3px;
+  flex: 0 0 auto;
+}
+
+.unpricedStock {
+  margin-left: auto;
+  color: #888;
+  font-size: 0.85em;
+  white-space: nowrap;
+}

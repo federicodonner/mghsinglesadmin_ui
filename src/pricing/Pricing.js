@@ -159,6 +159,16 @@ export default function Pricing() {
               {texts.FIXED_NO_STOCK_YET}
             </Typography>
           )}
+          {/* A soft pin yields to CardKingdom once it has a price. */}
+          {row.revert && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: "block" }}
+            >
+              {texts.REVERT_TO_CK}
+            </Typography>
+          )}
         </Box>
       </Box>
     );

@@ -18,7 +18,7 @@ export default function Login() {
   const [usernameError, setUsernameError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
 
-  const loginUsername = useRef(null);
+  const loginEmail = useRef(null);
   const loginPassword = useRef(null);
 
   let navigate = useNavigate();
@@ -57,24 +57,24 @@ export default function Login() {
   function loginUser(e) {
     // Prever navigation for form submit
     e.preventDefault();
-    // Verifies that the user enterd their username and password
-    if (!loginUsername.current.value) {
+    // Verifies that the user entered their email and password
+    if (!loginEmail.current.value) {
       setUsernameError(true);
     }
     if (!loginPassword.current.value) {
       setPasswordError(true);
     }
-    var enteredLoginUsername = loginUsername.current.value;
-    if (!loginUsername.current.value || !loginPassword.current.value) {
+    var enteredLoginEmail = loginEmail.current.value;
+    if (!loginEmail.current.value || !loginPassword.current.value) {
       return false;
     }
-    // If there is a username and a password, send it to the API
+    // Log in by email — the account's only identifier now.
     setLoginLoader(true);
     accessAPI(
       "POST",
       "oauth",
       JSON.stringify({
-        username: loginUsername.current.value,
+        email: loginEmail.current.value,
         password: loginPassword.current.value,
       }),
       (response) => {
@@ -95,8 +95,8 @@ export default function Login() {
         // (Writing to the null ref here used to throw, which is why the old
         // alert() never appeared on a failed login.)
         setTimeout(() => {
-          if (loginUsername.current)
-            loginUsername.current.value = enteredLoginUsername;
+          if (loginEmail.current)
+            loginEmail.current.value = enteredLoginEmail;
         }, 0);
       }
     );
@@ -119,11 +119,11 @@ export default function Login() {
                   {/* inputRef, not ref: TextField is a wrapper, and the code
                       below reads .current.value off the actual input. */}
                   <TextField
-                    type="text"
+                    type="email"
                     placeholder={texts.USER_PLACEHOLDER}
                     error={usernameError}
                     onChange={() => setUsernameError(false)}
-                    inputRef={loginUsername}
+                    inputRef={loginEmail}
                     fullWidth
                   />
                   <TextField

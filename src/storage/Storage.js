@@ -73,13 +73,16 @@ export default function Storage() {
   const [dir, setDir] = useState("asc");
   const [page, setPage] = useState(0);
   const [limit, setLimit] = useState(25);
-  // The sidebar: null, {mode:"create"} or {mode:"rename", unit}.
+  // The sidebar: null, {mode:"create"} or {mode:"edit", unit}.
   const [panel, setPanel] = useState(null);
   // The open per-row actions menu: {anchor, unit} or null.
   const [menu, setMenu] = useState(null);
+  // Customers, for the owner picker in the edit form. Fetched once.
+  const [customers, setCustomers] = useState([]);
 
   const nameRef = useRef(null);
   const typeRef = useRef(null);
+  const ownerRef = useRef(null);
 
   const navigate = useNavigate();
 
@@ -111,6 +114,21 @@ export default function Storage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, sort, dir, page, limit]);
 
+  // The customer roster for the owner picker — clients only; the shop is a
+  // separate option in the form.
+  useEffect(() => {
+    accessAPI(
+      "GET",
+      "admin/player",
+      null,
+      (response) =>
+        setCustomers(
+          (response ?? []).filter((p) => p.role === "customer")
+        ),
+      () => setCustomers([])
+    );
+  }, []);
+
   function toggleSort(column) {
     if (sort === column) setDir(dir === "asc" ? "desc" : "asc");
     else {
@@ -138,14 +156,19 @@ export default function Storage() {
     );
   }
 
-  function renameUnit(e) {
+  // Edit a container's store label and/or its owner. Reassigning the owner
+  // re-homes every card inside into the new owner's collection (the API does
+  // this atomically), so who gets paid on a sale follows the container.
+  function editUnit(e) {
     e.preventDefault();
     const name = nameRef.current.value.trim();
     if (!name) return;
+    // "shop" is the sentinel for the store owning it (playerid null).
+    const owner = ownerRef.current.value;
     accessAPI(
       "PUT",
       `storage/${panel.unit.id}`,
-      { name },
+      { name, owner: owner === "shop" ? null : parseInt(owner, 10) },
       () => {
         setPanel(null);
         load();
@@ -208,8 +231,8 @@ export default function Storage() {
     const actions = [];
     if (unit.inshop !== false) {
       actions.push({
-        label: texts.RENAME,
-        run: () => setPanel({ mode: "rename", unit }),
+        label: texts.EDIT,
+        run: () => setPanel({ mode: "edit", unit }),
       });
     }
     for (const to of unit.cando || []) {
@@ -377,6 +400,10 @@ export default function Storage() {
         anchorEl={menu?.anchor}
         open={Boolean(menu)}
         onClose={() => setMenu(null)}
+        // Without this MUI locks body scroll and pads the page to fake the
+        // gone scrollbar, shoving everything left with a margin on the right
+        // while the kebab is open.
+        disableScrollLock
       >
         {menu &&
           actionsFor(menu.unit).map((action) => (
@@ -398,7 +425,7 @@ export default function Storage() {
       <SideForm
         open={Boolean(panel)}
         onClose={() => setPanel(null)}
-        title={panel?.mode === "rename" ? texts.RENAME : texts.NEW_STORAGE}
+        title={panel?.mode === "edit" ? texts.EDIT_STORAGE : texts.NEW_STORAGE}
       >
         {panel?.mode === "create" && (
           <form onSubmit={createUnit}>
@@ -422,8 +449,8 @@ export default function Storage() {
             </Stack>
           </form>
         )}
-        {panel?.mode === "rename" && (
-          <form onSubmit={renameUnit}>
+        {panel?.mode === "edit" && (
+          <form onSubmit={editUnit}>
             <Stack spacing={2}>
               <TextField
                 type="text"
@@ -432,6 +459,21 @@ export default function Storage() {
                 defaultValue={panel.unit.name}
                 autoFocus
               />
+              <TextField
+                select
+                SelectProps={{ native: true }}
+                label={texts.STORAGE_OWNER}
+                inputRef={ownerRef}
+                defaultValue={panel.unit.owner ? String(panel.unit.owner.id) : "shop"}
+                helperText={texts.STORAGE_OWNER_HINT}
+              >
+                <option value="shop">{texts.STORAGE_OWNER_SHOP}</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.name} ({c.email})
+                  </option>
+                ))}
+              </TextField>
               <Button type="submit">{texts.SAVE}</Button>
             </Stack>
           </form>

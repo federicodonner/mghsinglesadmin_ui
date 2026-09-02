@@ -6,6 +6,7 @@ import Loader from "../loader/Loader";
 import { useNavigate } from "react-router-dom";
 import "./payment.css";
 import { accessAPI, logout } from "../utils/fetchFunctions";
+import { useExchangeRate, formatPesos } from "../utils/exchange";
 import texts from "../data/texts";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -42,6 +43,10 @@ function formatDate(seconds) {
 export default function Payment() {
   const [loader, setLoader] = useState(true);
   const [groups, setGroups] = useState([]);
+  // Consignors are paid in pesos, so this page shows pesos, converted at
+  // today's rate (payouts are stored in dollars — a display convenience, not a
+  // re-statement of the debt). Dollars only as a fallback with no rate.
+  const rate = useExchangeRate();
   // Selected sale ids, across all groups.
   const [selected, setSelected] = useState(() => new Set());
   const [paying, setPaying] = useState(false);
@@ -106,12 +111,27 @@ export default function Payment() {
   }
 
   // The amount about to change hands in one group: the sum of the selected
-  // rows' remainders.
+  // rows' remainders (in dollars — used only for the >0 enabled check).
   function selectedTotal(group) {
     return group.sales
       .filter((sale) => selected.has(sale.id))
       .reduce((sum, sale) => sum + Number(sale.remaining), 0);
   }
+
+  // Show one independent dollar amount in pesos (a payment in the history, the
+  // toast). formatPesos(round(x·rate)) — the same per-value rounding sumOwed
+  // uses, so a total built from rows and a single row never disagree.
+  const showMoney = (usd) =>
+    rate != null ? formatPesos(Math.round(Number(usd) * rate)) : money(usd);
+
+  // A total built from the SAME rounded pesos the rows show, so the group
+  // header and the "pay selected" button always add up to the visible rows.
+  const sumOwed = (sales) =>
+    rate != null
+      ? formatPesos(
+          sales.reduce((s, x) => s + Math.round(Number(x.remaining) * rate), 0)
+        )
+      : money(sales.reduce((s, x) => s + Number(x.remaining), 0));
 
   function pay(group) {
     const ids = group.sales
@@ -125,7 +145,7 @@ export default function Payment() {
       { saleids: ids },
       (response) => {
         setPaying(false);
-        toast(`${texts.PAYMENT_PROCESSED} (${money(response.paid)})`, "success");
+        toast(`${texts.PAYMENT_PROCESSED} (${showMoney(response.paid)})`, "success");
         load();
       },
       (response) => {
@@ -197,7 +217,7 @@ export default function Payment() {
                     </Typography>
                     {group.sales.length > 0 ? (
                       <Typography variant="body2" color="text.secondary">
-                        {texts.OWES} {money(group.owed)}
+                        {texts.OWES} {sumOwed(group.sales)}
                       </Typography>
                     ) : (
                       <Chip size="small" color="success" variant="outlined"
@@ -214,7 +234,11 @@ export default function Payment() {
                           pay(group);
                         }}
                       >
-                        {texts.PAY_SELECTED} ({money(total)})
+                        {texts.PAY_SELECTED} (
+                        {sumOwed(
+                          group.sales.filter((sale) => selected.has(sale.id))
+                        )}
+                        )
                       </Button>
                     )}
                   </Box>
@@ -247,19 +271,9 @@ export default function Payment() {
                                   gap: 1.5,
                                 }}
                               >
-                                {sale.image && (
-                                  <Box
-                                    component="img"
-                                    src={sale.image}
-                                    alt={sale.name}
-                                    loading="lazy"
-                                    sx={{
-                                      width: 32,
-                                      height: 45,
-                                      borderRadius: 0.5,
-                                    }}
-                                  />
-                                )}
+                                {/* No card image here (2026-09-02, Federico):
+                                    the pending-payments list reads as a
+                                    statement, not a gallery. */}
                                 <Box>
                                   <Typography
                                     variant="body2"
@@ -289,7 +303,7 @@ export default function Payment() {
                               align="right"
                               sx={{ width: 130, fontWeight: 600 }}
                             >
-                              {money(sale.remaining)}
+                              {showMoney(sale.remaining)}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -298,48 +312,9 @@ export default function Payment() {
                   </TableContainer>
                   )}
 
-                  {/* What has already been settled, newest first — so a
-                      "did I pay them last week?" question is answered right
-                      where the paying happens. Credit rows are marked: that
-                      money was spent on cards, not handed over. Same table
-                      dress as the owed cards above, so the two read as one
-                      statement. */}
-                  {group.payments.length > 0 && (
-                    <Box sx={{ mt: 2 }}>
-                      <Typography
-                        variant="subtitle2"
-                        color="text.secondary"
-                        sx={{ fontWeight: 700, mb: 0.5 }}
-                      >
-                        {texts.PAYMENT_HISTORY}
-                      </Typography>
-                      <TableContainer>
-                        <Table size="small">
-                          <TableBody>
-                            {group.payments.map((payment) => (
-                              <TableRow key={payment.id} hover>
-                                <TableCell sx={{ width: 148 }}>
-                                  {formatDate(payment.date)}
-                                </TableCell>
-                                <TableCell>
-                                  {payment.kind === "credit" && (
-                                    <Chip
-                                      size="small"
-                                      variant="outlined"
-                                      label={texts.PAID_AS_CREDIT}
-                                    />
-                                  )}
-                                </TableCell>
-                                <TableCell align="right" sx={{ width: 130 }}>
-                                  {money(payment.ammount)}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    </Box>
-                  )}
+                  {/* Payment history moved to each user's "Ver historial"
+                      (Usuarios) — 2026-09-02. This page is now just what is
+                      owed and the paying of it. */}
                   </Collapse>
                 </Box>
               );

@@ -7,6 +7,8 @@ import "../storage/addCard.css";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
@@ -21,8 +23,11 @@ const VERSIONS_PAGE = 60;
 // condition-and-quantity conversation. Fijar locks every stock row of that
 // printing; a version with no stock is refused by the API and the message
 // says so.
-export default function FixedPriceSidebar({ onFixed }) {
-  const [chosenName, setChosenName] = useState(null);
+// `initialName` pre-seeds the picked card, so opening this from the home page's
+// "sin precio" list lands straight on that card's printings instead of a blank
+// search. Mount it with a `key` tied to the card to re-seed for a new one.
+export default function FixedPriceSidebar({ onFixed, initialName }) {
+  const [chosenName, setChosenName] = useState(initialName ?? null);
   const [versions, setVersions] = useState([]);
   const [versionsTotal, setVersionsTotal] = useState(0);
   const [setFilter, setSetFilter] = useState("");
@@ -110,10 +115,10 @@ export default function FixedPriceSidebar({ onFixed }) {
   function fix(version) {
     const current = edits[version.scryfallid] ?? {};
     const price = (current.price ?? "").trim();
-    const buyprice = (current.buyprice ?? "").trim();
-    // An empty side is left following the market — but both empty fixes
-    // nothing at all.
-    if (!price && !buyprice) return;
+    // Sell price only (2026-09-02) — the buy price comes from CardKingdom's
+    // buylist. `revert` makes it a soft pin that yields to CK when a reference
+    // appears.
+    if (!price) return;
 
     setSaving(version.scryfallid);
     accessAPI(
@@ -121,8 +126,8 @@ export default function FixedPriceSidebar({ onFixed }) {
       "admin/prices/fixed",
       {
         scryfallid: version.scryfallid,
-        ...(price ? { price: Number(price) } : {}),
-        ...(buyprice ? { buyprice: Number(buyprice) } : {}),
+        price: Number(price),
+        revert: Boolean(current.revert),
       },
       (response) => {
         setSaving(null);
@@ -210,18 +215,7 @@ export default function FixedPriceSidebar({ onFixed }) {
                     inputProps={{ step: 0.01, min: 0 }}
                     value={edits[version.scryfallid]?.price ?? ""}
                     onChange={(e) => edit(version.scryfallid, "price", e.target.value)}
-                    sx={{ width: 100 }}
-                  />
-                  <TextField
-                    type="number"
-                    size="small"
-                    label={texts.COL_BUY}
-                    inputProps={{ step: 0.01, min: 0 }}
-                    value={edits[version.scryfallid]?.buyprice ?? ""}
-                    onChange={(e) =>
-                      edit(version.scryfallid, "buyprice", e.target.value)
-                    }
-                    sx={{ width: 100 }}
+                    sx={{ width: 110 }}
                   />
                   <Button
                     size="small"
@@ -232,6 +226,24 @@ export default function FixedPriceSidebar({ onFixed }) {
                     {texts.FIX_PRICE}
                   </Button>
                 </Stack>
+                <FormControlLabel
+                  sx={{ m: 0 }}
+                  control={
+                    <Checkbox
+                      size="small"
+                      sx={{ p: 0.5 }}
+                      checked={edits[version.scryfallid]?.revert ?? false}
+                      onChange={(e) =>
+                        edit(version.scryfallid, "revert", e.target.checked)
+                      }
+                    />
+                  }
+                  label={
+                    <Typography variant="caption" color="text.secondary">
+                      {texts.REVERT_TO_CK}
+                    </Typography>
+                  }
+                />
               </Stack>
             ))}
           </Stack>

@@ -7,7 +7,11 @@ import { useNavigate } from "react-router-dom";
 import texts from "../data/texts";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
-import { dualFrozen, formatPesos } from "../utils/exchange";
+import {
+  useExchangeRate,
+  formatPesos,
+  pesosFrozenOrLive,
+} from "../utils/exchange";
 import Title from "../elementos/Title";
 import SideForm from "../elementos/SideForm";
 import "./orders.css";
@@ -46,6 +50,12 @@ export default function Orders() {
   // the customer's balance is still loading.
   const [charging, setCharging] = useState(null);
   const [method, setMethod] = useState("cash");
+  // Everything the customer touches — order totals AND their store credit — is
+  // shown in pesos, converted at today's rate. Frozen order pesos win when they
+  // exist; credit (a dollar balance) is converted live.
+  const rate = useExchangeRate();
+  const pesos = (usd) =>
+    rate != null ? formatPesos(Math.round(Number(usd) * rate)) : money(usd);
 
   const navigate = useNavigate();
 
@@ -101,9 +111,9 @@ export default function Orders() {
         // to actually take.
         if (response?.creditused !== undefined) {
           toast(
-            `${response.message} ${texts.CREDIT_USED} ${money(response.creditused)}` +
+            `${response.message} ${texts.CREDIT_USED} ${pesos(response.creditused)}` +
               (Number(response.cashdue) > 0
-                ? ` · ${texts.CASH_DUE} ${money(response.cashdue)}`
+                ? ` · ${texts.CASH_DUE} ${pesos(response.cashdue)}`
                 : ""),
             "success"
           );
@@ -226,9 +236,8 @@ export default function Orders() {
                   <span className="orderDate">{formatDate(order.created)}</span>
                 )}
                 <span className="orderTotal">
-                  {texts.ORDER_TOTAL} U$S {order.total}
-                  {order.totalpesos != null &&
-                    ` · ${formatPesos(order.totalpesos)}`}
+                  {texts.ORDER_TOTAL}{" "}
+                  {pesosFrozenOrLive(order.total, order.totalpesos, rate)}
                 </span>
               </div>
               <div className="orderLines">
@@ -243,7 +252,7 @@ export default function Orders() {
                       <span className="lineMeta">{finishLabel(line.variant)}</span>
                     )}
                     <span className="linePrice">
-                      {dualFrozen(line.price, line.pricepesos)}
+                      {pesosFrozenOrLive(line.price, line.pricepesos, rate)}
                     </span>
                     {order.status === "pending" && (
                       <Button
@@ -294,14 +303,16 @@ export default function Orders() {
             <Typography variant="body2">
               {charging.order.player?.name} — {texts.ORDER_TOTAL}{" "}
               <strong>
-                {money(charging.order.total)}
-                {charging.order.totalpesos != null &&
-                  ` · ${formatPesos(charging.order.totalpesos)}`}
+                {pesosFrozenOrLive(
+                  charging.order.total,
+                  charging.order.totalpesos,
+                  rate
+                )}
               </strong>
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {texts.CREDIT_AVAILABLE}{" "}
-              {charging.credit === null ? "…" : money(charging.credit)}
+              {charging.credit === null ? "…" : pesos(charging.credit)}
             </Typography>
             <RadioGroup
               value={method}
@@ -319,20 +330,38 @@ export default function Orders() {
                 label={texts.PAY_WITH_CREDIT}
               />
             </RadioGroup>
-            {method === "credit" && charging.credit !== null && (
-              <Box>
-                <Typography variant="body2">
-                  {texts.CREDIT_USED}{" "}
-                  {money(Math.min(charging.credit, Number(charging.order.total)))}
-                </Typography>
-                {Number(charging.order.total) > charging.credit && (
-                  <Typography variant="body2">
-                    {texts.CASH_DUE}{" "}
-                    {money(Number(charging.order.total) - charging.credit)}
-                  </Typography>
-                )}
-              </Box>
-            )}
+            {method === "credit" &&
+              charging.credit !== null &&
+              (() => {
+                // Work the split in the SAME pesos the total is shown in, so
+                // credit-used + cash-due = total exactly. The frozen order pesos
+                // are the base when present; credit converts at today's rate.
+                const totalP =
+                  charging.order.totalpesos != null
+                    ? Number(charging.order.totalpesos)
+                    : rate != null
+                    ? Math.round(Number(charging.order.total) * rate)
+                    : Number(charging.order.total);
+                const creditP =
+                  rate != null
+                    ? Math.round(Number(charging.credit) * rate)
+                    : Number(charging.credit);
+                const fmt = (v) => (rate != null ? formatPesos(v) : money(v));
+                const appliedP = Math.min(creditP, totalP);
+                const cashP = totalP - appliedP;
+                return (
+                  <Box>
+                    <Typography variant="body2">
+                      {texts.CREDIT_USED} {fmt(appliedP)}
+                    </Typography>
+                    {cashP > 0 && (
+                      <Typography variant="body2">
+                        {texts.CASH_DUE} {fmt(cashP)}
+                      </Typography>
+                    )}
+                  </Box>
+                );
+              })()}
             <Button
               onClick={() =>
                 act(charging.order, "complete", null, {

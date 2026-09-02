@@ -6,6 +6,7 @@ import "./home.css";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import MatchQueue from "../orders/MatchQueue";
 import RefileQueue from "../orders/RefileQueue";
+import UnpricedQueue from "../pricing/UnpricedQueue";
 
 // The first screen of a shift. It opens on the match queue because that is
 // the work nobody triggered and nobody would otherwise look for: cards on the
@@ -41,6 +42,8 @@ export default function Home() {
             {/* Cards to put back first: until they are refiled, the shelf is
                 wrong about what it holds. */}
             <RefileQueue />
+            {/* Cards with no price yet — invisible to shoppers until priced. */}
+            <UnpricedQueue />
             <MatchQueue />
           </>
         )}

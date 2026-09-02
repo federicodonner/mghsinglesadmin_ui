@@ -4,7 +4,7 @@ import { confirmDialog } from "../utils/confirm";
 import texts from "../data/texts";
 import { accessAPI } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
-import { useExchangeRate, dualLive } from "../utils/exchange";
+import { useExchangeRate, pesosLive } from "../utils/exchange";
 import "./orders.css";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
@@ -146,7 +146,7 @@ export default function MatchQueue() {
                 <span className="linePrice">
                   {match.kind === "withdrawal"
                     ? "—"
-                    : dualLive(match.price, rate)}
+                    : pesosLive(match.price, rate)}
                 </span>
                 {/* Stock moved since this match was found — bagged for someone
                     else, sold, or its container went home. Said out loud and

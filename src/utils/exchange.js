@@ -49,3 +49,30 @@ export function dualFrozen(price, pricepesos) {
   const pesos = formatPesos(pricepesos);
   return `U$S ${price}${pesos ? ` · ${pesos}` : ""}`;
 }
+
+// PESOS-ONLY for the counter (2026-09-02, Federico): what the customer is
+// charged shows in pesos. A LIVE price converts at today's rate; falls back to
+// dollars only if the shop has no rate configured. Pricing stays in dollars —
+// that is the internal currency staff set prices in.
+export function pesosLive(usd, rate) {
+  if (usd == null) return null;
+  return livePesos(usd, rate) ?? `U$S ${usd}`;
+}
+
+// PESOS-ONLY from an order line's FROZEN peso snapshot; falls back to the
+// frozen dollar amount for lines that predate the peso column.
+export function pesosFrozen(price, pricepesos) {
+  if (pricepesos == null) return price == null ? null : `U$S ${price}`;
+  return formatPesos(pricepesos);
+}
+
+// Pesos for an order amount: the FROZEN peso snapshot when it exists (the true
+// amount quoted at bagging), otherwise a LIVE conversion of the dollar amount
+// at today's rate — so orders placed before the shop had pesos still read in
+// pesos. Dollars only as a last resort, when the shop has no rate.
+export function pesosFrozenOrLive(price, pricepesos, rate) {
+  if (pricepesos != null) return formatPesos(pricepesos);
+  if (price == null) return null;
+  if (rate != null) return formatPesos(Math.round(Number(price) * rate));
+  return `U$S ${price}`;
+}

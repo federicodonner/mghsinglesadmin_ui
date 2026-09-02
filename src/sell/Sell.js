@@ -11,7 +11,7 @@ import "../orders/orders.css";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
 import { locationLabel } from "../utils/locationLabel";
-import { useExchangeRate, dualLive, dualFrozen, formatPesos } from "../utils/exchange";
+import { useExchangeRate, pesosLive, pesosFrozen, formatPesos } from "../utils/exchange";
 import texts from "../data/texts";
 import Button from "@mui/material/Button";
 
@@ -209,7 +209,7 @@ export default function Sell() {
                     {card.owner && (
                       <span className="lineMeta">{card.owner}</span>
                     )}
-                    <span className="linePrice">{dualLive(card.price, rate)}</span>
+                    <span className="linePrice">{pesosLive(card.price, rate)}</span>
                   </div>
                   {/* One row per physical copy: where it sits, so the person
                       rings up exactly the one they pulled. */}
@@ -256,14 +256,15 @@ export default function Sell() {
                         </span>
                       )}
                       <span className="linePrice">
-                        {dualFrozen(line.price, line.pricepesos)}
+                        {pesosFrozen(line.price, line.pricepesos)}
                       </span>
                     </div>
                   ))}
                   <div className="sellTotal">
-                    {texts.ORDER_TOTAL} U$S {bag.total}
-                    {bag.totalpesos != null &&
-                      ` · ${formatPesos(bag.totalpesos)}`}
+                    {texts.ORDER_TOTAL}{" "}
+                    {bag.totalpesos != null
+                      ? formatPesos(bag.totalpesos)
+                      : `U$S ${bag.total}`}
                   </div>
                   <div className="orderActions">
                     <Button onClick={complete}>{texts.COMPLETE_ORDER}</Button>
