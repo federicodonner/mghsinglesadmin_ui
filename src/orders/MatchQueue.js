@@ -32,7 +32,12 @@ export default function MatchQueue() {
       "GET",
       "admin/match",
       null,
-      (response) => setMatches(response),
+      (response) => {
+        setMatches(response);
+        // Drop any stale copy choice: a placement just bagged is gone from the
+        // next list, so start each reload from the default (nearest) copy.
+        setChosen({});
+      },
       () => setMatches([])
     );
   }
@@ -104,16 +109,32 @@ export default function MatchQueue() {
                   each answer the same want. Said out loud, because bagging one
                   makes the others withdraw — which otherwise reads as rows
                   vanishing for no reason. */}
-              {group.length > 1 && (
+              {(group.length > 1 || group[0].wantedQuantity > 1) && (
                 <div className="matchAlternativesHint">
-                  {texts.WANTS} {group[0].wantedQuantity} ·{" "}
-                  {texts.ANY_VERSION_OK}
+                  {texts.WANTS} {group[0].wantedQuantity}
+                  {group.length > 1 && ` · ${texts.ANY_VERSION_OK}`}
                   {group[0].baggedQuantity > 0 &&
                     ` · ${group[0].baggedQuantity} ${texts.ALREADY_IN_BAG}`}
                 </div>
               )}
-              {group.map((match) => (
-            <div className="matchBlock" key={match.id}>
+              {group.flatMap((match) => {
+                const remaining = Math.max(
+                  1,
+                  (match.wantedQuantity ?? 1) - (match.baggedQuantity ?? 0)
+                );
+                // Each copy the shop still owes is its OWN row, so an order for
+                // three identical copies is three separable cards — not one row
+                // acted on three times. An alternative-version group (several
+                // printings answering one wish) stays one row per printing:
+                // those are choices, not copies.
+                const copies =
+                  group.length === 1
+                    ? match.available > 0
+                      ? Math.min(remaining, match.available)
+                      : 1
+                    : 1;
+                return Array.from({ length: copies }, (_, copyIndex) => (
+            <div className="matchBlock" key={`${match.id}-${copyIndex}`}>
               <div className="matchRow">
                 {match.image && (
                   <img className="matchThumb" src={match.image} alt={match.name} />
@@ -204,7 +225,8 @@ export default function MatchQueue() {
                 )}
               </div>
             </div>
-              ))}
+                ));
+              })}
             </div>
           ))}
         </div>
