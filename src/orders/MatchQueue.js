@@ -191,6 +191,18 @@ export default function MatchQueue() {
                 </Button>
               </div>
 
+              {/* A purchase from a wishlist is not a confirmed order — the
+                  customer wished for it but has not been asked to buy. Say so,
+                  so the shop checks before setting it aside. (Auto-buy wishes
+                  never land here; they become orders in "Pedidos para
+                  preparar".) A withdrawal is the customer's own card, already
+                  requested, so it needs no such check. */}
+              {match.kind === "purchase" && (
+                <div className="matchConfirmNote">
+                  {texts.MATCH_CONFIRM_FIRST}
+                </div>
+              )}
+
               {/* Where to actually go and get this one. Two rows can share a
                   card name, so this has to sit with its own row. */}
               <div className="matchWhere">

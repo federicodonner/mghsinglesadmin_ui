@@ -361,3 +361,16 @@
   font-size: 0.85em;
   margin: 6px 0 2px;
 }
+
+/* A wishlist purchase is not a confirmed order — flag it so the shop checks
+   with the customer before pulling. */
+.matchConfirmNote {
+  color: #a15c00;
+  background: #fff4e0;
+  border: 1px solid #f0d9a8;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.85em;
+  margin: 6px 0 2px;
+  display: inline-block;
+}

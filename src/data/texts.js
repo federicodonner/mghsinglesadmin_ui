@@ -257,7 +257,9 @@ const texts = {
   MATCH_PURCHASE: "Compra",
   MATCH_WITHDRAWAL: "Es del cliente",
   MATCH_WITHDRAWAL_HINT: "Se la lleva sin pagar",
-  CONFIRM_DISMISS_MATCH: "¿Descartar esta coincidencia? No se volverá a ofrecer.",
+  MATCH_CONFIRM_FIRST: "Confirmá con el cliente antes de apartar.",
+  CONFIRM_DISMISS_MATCH:
+    "El cliente no la quiere: se quitará de sus deseados y no se volverá a ofrecer. ¿Descartar?",
   WANTS: "Quiere",
   ANY_VERSION_OK: "cualquiera de estas versiones sirve",
   ALREADY_IN_BAG: "ya en bolsa",
