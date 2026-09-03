@@ -131,8 +131,13 @@ function UserTable({
                   {player.phone || "—"}
                 </TableCell>
                 {showCredit ? (
-                  <TableCell align="right" sx={{ fontWeight: 600 }}>
-                    {creditPesos(player.credit, rate)}
+                  <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {texts.SALE_MONEY_SHORT} {creditPesos(player.saleMoney, rate)}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {texts.STORE_CREDIT_SHORT} {creditPesos(player.storeCredit, rate)}
+                    </Typography>
                   </TableCell>
                 ) : (
                   <TableCell>
@@ -554,8 +559,9 @@ function EditUserForm({ player, onSaved }) {
   );
 }
 
-// Add or subtract a customer's store credit, in pesos. The current balance and
-// the resulting balance are shown so the change is never a guess.
+// Add or subtract a customer's STORE CREDIT, in pesos — the hand-loaded bucket
+// (a prize, a correction), never the money earned from sales. The current and
+// resulting store credit are shown so the change is never a guess.
 function AdjustCreditForm({ player, rate, onSaved }) {
   const [sign, setSign] = useState("add");
   const [amount, setAmount] = useState("");
@@ -564,10 +570,10 @@ function AdjustCreditForm({ player, rate, onSaved }) {
 
   const value = Number(amount);
   const valid = amount.trim() !== "" && Number.isFinite(value) && value > 0;
-  // Preview in pesos: the current credit (converted from dollars) plus/minus
-  // the typed pesos, never below zero.
+  // Preview in pesos: the current store credit (converted from dollars)
+  // plus/minus the typed pesos, never below zero.
   const currentPesos =
-    rate != null ? Math.round(Number(player.credit ?? 0) * rate) : null;
+    rate != null ? Math.round(Number(player.storeCredit ?? 0) * rate) : null;
   const delta = sign === "add" ? value : -value;
   const resultPesos =
     currentPesos != null && valid
@@ -597,7 +603,8 @@ function AdjustCreditForm({ player, rate, onSaved }) {
     <Stack spacing={2}>
       <Typography variant="subtitle1">{player.name}</Typography>
       <Typography variant="body2" color="text.secondary">
-        {texts.CURRENT_CREDIT}: <strong>{creditPesos(player.credit, rate)}</strong>
+        {texts.CURRENT_STORE_CREDIT}:{" "}
+        <strong>{creditPesos(player.storeCredit, rate)}</strong>
       </Typography>
 
       <ToggleButtonGroup

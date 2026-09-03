@@ -153,7 +153,7 @@ export default function Orders() {
       return;
     }
     setMethod("cash");
-    setCharging({ order, credit: null });
+    setCharging({ order, saleMoney: null, storeCredit: null });
     accessAPI(
       "GET",
       `admin/credit/${order.player.id}`,
@@ -161,12 +161,18 @@ export default function Orders() {
       (response) =>
         setCharging((current) =>
           current?.order.id === order.id
-            ? { ...current, credit: Number(response.credit) }
+            ? {
+                ...current,
+                saleMoney: Number(response.saleMoney),
+                storeCredit: Number(response.storeCredit),
+              }
             : current
         ),
       () =>
         setCharging((current) =>
-          current?.order.id === order.id ? { ...current, credit: 0 } : current
+          current?.order.id === order.id
+            ? { ...current, saleMoney: 0, storeCredit: 0 }
+            : current
         )
     );
   }
@@ -310,10 +316,18 @@ export default function Orders() {
                 )}
               </strong>
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {texts.CREDIT_AVAILABLE}{" "}
-              {charging.credit === null ? "…" : pesos(charging.credit)}
-            </Typography>
+            {/* Both balances, kept apart. Store credit is spent first (it can
+                only be spent, never cashed out), then the sale money. */}
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                {texts.SALE_MONEY_SHORT}{" "}
+                {charging.saleMoney === null ? "…" : pesos(charging.saleMoney)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {texts.STORE_CREDIT_SHORT}{" "}
+                {charging.storeCredit === null ? "…" : pesos(charging.storeCredit)}
+              </Typography>
+            </Box>
             <RadioGroup
               value={method}
               onChange={(e) => setMethod(e.target.value)}
@@ -326,34 +340,46 @@ export default function Orders() {
               <FormControlLabel
                 value="credit"
                 control={<Radio size="small" />}
-                disabled={!charging.credit}
+                disabled={
+                  !(Number(charging.saleMoney) || Number(charging.storeCredit))
+                }
                 label={texts.PAY_WITH_CREDIT}
               />
             </RadioGroup>
             {method === "credit" &&
-              charging.credit !== null &&
+              charging.saleMoney !== null &&
+              charging.storeCredit !== null &&
               (() => {
                 // Work the split in the SAME pesos the total is shown in, so
-                // credit-used + cash-due = total exactly. The frozen order pesos
-                // are the base when present; credit converts at today's rate.
+                // the parts add back to the total exactly. Store credit first,
+                // then sale money, then cash for the rest.
                 const totalP =
                   charging.order.totalpesos != null
                     ? Number(charging.order.totalpesos)
                     : rate != null
                     ? Math.round(Number(charging.order.total) * rate)
                     : Number(charging.order.total);
-                const creditP =
-                  rate != null
-                    ? Math.round(Number(charging.credit) * rate)
-                    : Number(charging.credit);
+                const toP = (usd) =>
+                  rate != null ? Math.round(Number(usd) * rate) : Number(usd);
                 const fmt = (v) => (rate != null ? formatPesos(v) : money(v));
-                const appliedP = Math.min(creditP, totalP);
-                const cashP = totalP - appliedP;
+                const storeUsed = Math.min(toP(charging.storeCredit), totalP);
+                const saleUsed = Math.min(
+                  toP(charging.saleMoney),
+                  totalP - storeUsed
+                );
+                const cashP = totalP - storeUsed - saleUsed;
                 return (
                   <Box>
-                    <Typography variant="body2">
-                      {texts.CREDIT_USED} {fmt(appliedP)}
-                    </Typography>
+                    {storeUsed > 0 && (
+                      <Typography variant="body2">
+                        {texts.STORE_CREDIT_SHORT} {fmt(storeUsed)}
+                      </Typography>
+                    )}
+                    {saleUsed > 0 && (
+                      <Typography variant="body2">
+                        {texts.SALE_MONEY_SHORT} {fmt(saleUsed)}
+                      </Typography>
+                    )}
                     {cashP > 0 && (
                       <Typography variant="body2">
                         {texts.CASH_DUE} {fmt(cashP)}
