@@ -24,6 +24,7 @@ import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import TableSortLabel from "@mui/material/TableSortLabel";
 import TextField from "@mui/material/TextField";
+import Autocomplete from "@mui/material/Autocomplete";
 import Typography from "@mui/material/Typography";
 
 const TYPE_LABELS = {
@@ -79,10 +80,12 @@ export default function Storage() {
   const [menu, setMenu] = useState(null);
   // Customers, for the owner picker in the edit form. Fetched once.
   const [customers, setCustomers] = useState([]);
+  // The owner chosen in the edit form's autocomplete: an option object
+  // { id: "shop" | <playerid>, label }.
+  const [ownerOption, setOwnerOption] = useState(null);
 
   const nameRef = useRef(null);
   const typeRef = useRef(null);
-  const ownerRef = useRef(null);
 
   const navigate = useNavigate();
 
@@ -129,6 +132,18 @@ export default function Storage() {
     );
   }, []);
 
+  // Seed the owner autocomplete when the edit form opens: the container's
+  // current owner, or the shop. (Matched to the roster option by id, so the
+  // name-only seed still highlights the right customer once picked.)
+  useEffect(() => {
+    if (panel?.mode !== "edit") return;
+    setOwnerOption(
+      panel.unit.owner
+        ? { id: panel.unit.owner.id, label: panel.unit.owner.name }
+        : { id: "shop", label: texts.STORAGE_OWNER_SHOP }
+    );
+  }, [panel]);
+
   function toggleSort(column) {
     if (sort === column) setDir(dir === "asc" ? "desc" : "asc");
     else {
@@ -164,7 +179,7 @@ export default function Storage() {
     const name = nameRef.current.value.trim();
     if (!name) return;
     // "shop" is the sentinel for the store owning it (playerid null).
-    const owner = ownerRef.current.value;
+    const owner = ownerOption?.id ?? "shop";
     accessAPI(
       "PUT",
       `storage/${panel.unit.id}`,
@@ -459,21 +474,29 @@ export default function Storage() {
                 defaultValue={panel.unit.name}
                 autoFocus
               />
-              <TextField
-                select
-                SelectProps={{ native: true }}
-                label={texts.STORAGE_OWNER}
-                inputRef={ownerRef}
-                defaultValue={panel.unit.owner ? String(panel.unit.owner.id) : "shop"}
-                helperText={texts.STORAGE_OWNER_HINT}
-              >
-                <option value="shop">{texts.STORAGE_OWNER_SHOP}</option>
-                {customers.map((c) => (
-                  <option key={c.id} value={String(c.id)}>
-                    {c.name} ({c.email})
-                  </option>
-                ))}
-              </TextField>
+              {/* Type to filter the roster instead of scrolling a dropdown.
+                  "Tienda" is the first option (the shop owning it). */}
+              <Autocomplete
+                options={[
+                  { id: "shop", label: texts.STORAGE_OWNER_SHOP },
+                  ...customers.map((c) => ({
+                    id: c.id,
+                    label: `${c.name} (${c.email})`,
+                  })),
+                ]}
+                value={ownerOption}
+                onChange={(e, value) => setOwnerOption(value)}
+                isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                getOptionLabel={(opt) => opt.label ?? ""}
+                disableClearable
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={texts.STORAGE_OWNER}
+                    helperText={texts.STORAGE_OWNER_HINT}
+                  />
+                )}
+              />
               <Button type="submit">{texts.SAVE}</Button>
             </Stack>
           </form>
