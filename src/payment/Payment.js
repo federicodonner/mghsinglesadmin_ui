@@ -289,14 +289,9 @@ export default function Payment() {
                                     {sale.cardsetname}
                                   </Typography>
                                 </Box>
-                                {sale.partial && (
-                                  <Chip
-                                    size="small"
-                                    color="warning"
-                                    variant="outlined"
-                                    label={texts.PARTIAL}
-                                  />
-                                )}
+                                {/* No "parcial" flag (2026-09-03): the shop
+                                    does not track payment card by card — a row
+                                    just shows the amount still owed on it. */}
                               </Box>
                             </TableCell>
                             <TableCell

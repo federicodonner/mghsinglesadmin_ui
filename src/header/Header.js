@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Box from "@mui/material/Box";
@@ -28,9 +27,12 @@ export default function Header(props) {
     >
       <Box className="headerInner">
         <Toolbar disableGutters sx={{ gap: 2, minHeight: { xs: 64 } }}>
-          <Link to="/" className="logoContainer">
+          {/* A plain anchor, not a router Link: the home page's queues carry
+              time-sensitive info, so clicking the logo does a full reload to
+              re-fetch them — even when already on the home page. */}
+          <a href="/" className="logoContainer">
             <img src={singlesLogo} className="singlesLogo" alt="MGH Singles" />
-          </Link>
+          </a>
 
           {props.showMenu && (
             <Menu
