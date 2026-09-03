@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import "./home.css";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import MatchQueue from "../orders/MatchQueue";
+import PrepareQueue from "../orders/PrepareQueue";
 import RefileQueue from "../orders/RefileQueue";
 import UnpricedQueue from "../pricing/UnpricedQueue";
 
@@ -44,6 +45,9 @@ export default function Home() {
             <RefileQueue />
             {/* Cards with no price yet — invisible to shoppers until priced. */}
             <UnpricedQueue />
+            {/* Orders a customer already paid attention to: confirmed from
+                their cart and waiting to be assembled. */}
+            <PrepareQueue />
             <MatchQueue />
           </>
         )}

@@ -231,6 +231,10 @@ const texts = {
   MATCHES_HINT:
     "Estas cartas están en stock y alguien las tiene en su lista de deseados. Apártalas en la bolsa del cliente.",
   NO_MATCHES: "No hay cartas para apartar.",
+  PREPARE_TITLE: "Pedidos para preparar",
+  PREPARE_HINT:
+    "Pedidos que los clientes confirmaron desde su carrito. Buscá cada carta y apartala; cuando estén todas, el pedido queda listo para retirar.",
+  NO_PREPARE: "No hay pedidos para preparar.",
   SET_ASIDE: "Apartar",
   WHERE_IS_IT: "Dónde está",
   NO_LOCATION: "Sin ubicación registrada",
