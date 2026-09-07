@@ -17,6 +17,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import texts from "../data/texts";
 import { isFoil, finishLabel } from "../utils/finishes";
 import { DraggableCard, Pocket, StandbyZone } from "./BinderPieces";
@@ -101,6 +102,13 @@ export default function BinderEditor({
   const [spread, setSpread] = useState(0);
   const [desiredPages, setDesiredPages] = useState(0);
 
+  // On a phone two facing pages do not fit, so the binder turns one page at a
+  // time (the ‹ › arrows step by a single page). The same drag-and-arrange
+  // model, just one leaf on screen. Matches the 700px breakpoint the CSS uses
+  // to stop drawing the blank inside-cover.
+  const isMobile = useMediaQuery("(max-width:700px)");
+  const [mobilePage, setMobilePage] = useState(1);
+
   const rawPages = (unit.pages ?? []).filter(Boolean);
   const rawStandby = unit.standby ?? [];
 
@@ -160,6 +168,10 @@ export default function BinderEditor({
   const lastSpread = spreadForPage(lastPage);
   const atLast = spread >= lastSpread;
 
+  // The single page shown on a phone, kept inside the binder's real range.
+  const curMobilePage = Math.min(Math.max(mobilePage, 1), lastPage);
+  const atLastMobile = curMobilePage >= lastPage;
+
   const pageAt = (n) =>
     n === null
       ? null
@@ -170,9 +182,23 @@ export default function BinderEditor({
             cards: [],
           })),
         };
-  const visiblePages = pagesInSpread(spread).map(pageAt);
+  const visiblePages = isMobile
+    ? [pageAt(curMobilePage)]
+    : pagesInSpread(spread).map(pageAt);
 
   function turnForward() {
+    if (isMobile) {
+      if (!atLastMobile) {
+        setMobilePage(curMobilePage + 1);
+        return;
+      }
+      // Past the last page there is no paper yet: turning forward adds one, for
+      // whoever may arrange.
+      if (!arrange) return;
+      setDesiredPages(Math.max(desiredPages, curMobilePage + 1));
+      setMobilePage(curMobilePage + 1);
+      return;
+    }
     if (!atLast) {
       setSpread(spread + 1);
       return;
@@ -182,6 +208,12 @@ export default function BinderEditor({
     if (!arrange) return;
     setDesiredPages((spread + 1) * 2 + 1);
     setSpread(spread + 1);
+  }
+
+  // Turn one leaf back on a phone.
+  function turnBack() {
+    if (isMobile) setMobilePage(curMobilePage - 1);
+    else setSpread(spread - 1);
   }
 
   const findCard = (placementid) => {
@@ -286,8 +318,8 @@ export default function BinderEditor({
         <Box className="binderPages">
           <IconButton
             className="pageNav"
-            disabled={spread === 0}
-            onClick={() => setSpread(spread - 1)}
+            disabled={isMobile ? curMobilePage <= 1 : spread === 0}
+            onClick={turnBack}
             title={texts.PREV_PAGES}
           >
             ‹
@@ -341,9 +373,13 @@ export default function BinderEditor({
           )}
           <IconButton
             className="pageNav"
-            disabled={atLast && !arrange}
+            disabled={(isMobile ? atLastMobile : atLast) && !arrange}
             onClick={turnForward}
-            title={atLast ? texts.ADD_PAGE : texts.NEXT_PAGES}
+            title={
+              (isMobile ? atLastMobile : atLast)
+                ? texts.ADD_PAGE
+                : texts.NEXT_PAGES
+            }
           >
             ›
           </IconButton>

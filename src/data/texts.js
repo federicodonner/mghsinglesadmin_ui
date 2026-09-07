@@ -151,6 +151,9 @@ const texts = {
   IN_POCKET: "bolsillo",
   DEPTH: "profundidad",
   CONFIRM_DELETE_STORAGE: "¿Eliminar este contenedor?",
+  CONFIRM_DELETE_STORAGE_CARDS_1: "Este contenedor tiene ",
+  CONFIRM_DELETE_STORAGE_CARDS_2:
+    " carta(s) adentro. Al eliminarlo también se eliminan esas cartas. ¿Continuar?",
   ORDERS: "Pedidos",
   PRICING: "Precios",
   USERS: "Usuarios",

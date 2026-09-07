@@ -215,6 +215,31 @@
   .binderPage.pageBlank {
     display: none;
   }
+
+  /* One page at a time, flanked by the ‹ › arrows on a single row — two facing
+     pages do not fit on a phone. The page shrinks to share the row with the
+     arrows instead of wrapping below them. */
+  .binderPages {
+    flex-wrap: nowrap;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .binderPage {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .pageNav {
+    flex: 0 0 auto;
+  }
+
+  /* Wrapped below the pages, the stand-by box keeps its 260px width; centre it
+     on the row instead of letting it hang off the left edge. */
+  .standbyZone {
+    margin-left: auto;
+    margin-right: auto;
+  }
 }
 
 /* The foil marker: the same tag the box list uses, floated at the bottom

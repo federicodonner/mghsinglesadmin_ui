@@ -224,10 +224,21 @@ export default function Storage() {
 
   async function removeUnit(unit) {
     if (!(await confirmDialog(texts.CONFIRM_DELETE_STORAGE))) return;
+    // A container with cards inside takes them with it — a second, explicit
+    // confirmation, and `withCards` so the API only does it when asked.
+    const withCards = unit.cardcount > 0;
+    if (
+      withCards &&
+      !(await confirmDialog(
+        `${texts.CONFIRM_DELETE_STORAGE_CARDS_1}${unit.cardcount}${texts.CONFIRM_DELETE_STORAGE_CARDS_2}`
+      ))
+    ) {
+      return;
+    }
     accessAPI(
       "DELETE",
       `storage/${unit.id}`,
-      null,
+      withCards ? { withCards: true } : null,
       () => load(),
       (response) => toast(response.message)
     );
