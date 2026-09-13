@@ -60,7 +60,7 @@ export default function StorageDetail() {
 
   // Read the picked CSV and hand it to the API, which maps rows to pockets
   // (empty lines skip one) and keeps the scan's condition and language.
-  async function importManaBox(e) {
+  async function importCollection(e) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file || !unit) return;
@@ -260,7 +260,7 @@ export default function StorageDetail() {
                   ? [
                       { label: texts.ADD_CARD, onClick: () => setAdding(true) },
                       {
-                        label: texts.IMPORT_MANABOX,
+                        label: texts.IMPORT_COLLECTION,
                         onClick: () => !importing && importRef.current?.click(),
                       },
                     ]
@@ -276,7 +276,7 @@ export default function StorageDetail() {
                 severity="info"
                 sx={{ mb: 2 }}
               >
-                {texts.IMPORTING_MANABOX}
+                {texts.IMPORTING_COLLECTION}
               </Alert>
             )}
 
@@ -288,7 +288,7 @@ export default function StorageDetail() {
               type="file"
               accept=".csv,text/csv"
               style={{ display: "none" }}
-              onChange={importManaBox}
+              onChange={importCollection}
             />
 
             {/* Says why controls are absent, rather than leaving them to be

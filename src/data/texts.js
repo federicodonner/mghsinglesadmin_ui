@@ -30,8 +30,8 @@ const texts = {
   STACK_UP: "Subir en la pila",
   STACK_DOWN: "Bajar en la pila",
   SHIFT_AHEAD: "Correr desde acá un lugar adelante",
-  IMPORT_MANABOX: "Importar de ManaBox",
-  IMPORTING_MANABOX: "Importando el archivo de ManaBox…",
+  IMPORT_COLLECTION: "Importar colección",
+  IMPORTING_COLLECTION: "Importando el archivo…",
   IMPORT_DONE_CARDS: " carta(s) importadas",
   IMPORT_SKIPPED: " bolsillo(s) vacío(s)",
   IMPORT_ERRORS: " fila(s) con error",
@@ -99,6 +99,7 @@ const texts = {
   // The three lists of the container page: what is selling, what is being
   // brought in, and what is out of the shop's hands (retired or handed back).
   STORAGE_ACTIVE: "En la tienda",
+  STORAGE_OFF_SALE_LIST: "Retirados de la venta",
   STORAGE_RETIRED_LIST: "Retirados por su dueño (esperando entrega)",
   STORAGE_INCOMING: "En camino a la tienda",
   STORAGE_AWAY: "Fuera de la tienda",
@@ -134,6 +135,8 @@ const texts = {
   DO_RETURN_TO_OWNER: "Devolver al dueño",
   DO_ACCEPT: "Recibir y poner en venta",
   DO_CANCEL_RETIRE: "Cancelar retiro",
+  DO_OFF_SALE: "Sacar de venta",
+  DO_BACK_ON_SALE: "Volver a poner en venta",
   STORAGE_RETURNED: "Contenedor devuelto al dueño.",
   HELD_BACK: "Cartas que quedan en la tienda (ya apartadas para un pedido):",
   NOTHING_HELD_BACK: "No queda ninguna carta apartada.",

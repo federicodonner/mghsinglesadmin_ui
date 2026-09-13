@@ -38,6 +38,8 @@ const TYPE_LABELS = {
 // taking delivery. The API decides which moves are offered (`cando`); this only
 // names them.
 function moveLabel(from, to) {
+  // The shop taking its own container off the shelf, or putting it back.
+  if (to === "off_sale") return texts.DO_OFF_SALE;
   if (to === "released") {
     // From for_sale this is the shop handing a binder back over the counter
     // without the customer having asked first — a different action from
@@ -45,6 +47,7 @@ function moveLabel(from, to) {
     return from === "for_sale" ? texts.DO_RETURN_TO_OWNER : texts.DO_RELEASE;
   }
   if (to === "for_sale") {
+    if (from === "off_sale") return texts.DO_BACK_ON_SALE;
     return from === "retired" ? texts.DO_CANCEL_RETIRE : texts.DO_ACCEPT;
   }
   return to;
@@ -58,6 +61,7 @@ function moveLabel(from, to) {
 // it once.
 const SECTIONS = [
   { key: "active", title: texts.STORAGE_ACTIVE, states: ["for_sale"] },
+  { key: "off_sale", title: texts.STORAGE_OFF_SALE_LIST, states: ["off_sale"] },
   { key: "retired", title: texts.STORAGE_RETIRED_LIST, states: ["retired"] },
   { key: "incoming", title: texts.STORAGE_INCOMING, states: ["returning"] },
   { key: "away", title: texts.STORAGE_AWAY, states: ["released"] },
