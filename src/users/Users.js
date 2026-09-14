@@ -54,6 +54,7 @@ function UserTable({
   rate,
   onEdit,
   onAdjustCredit,
+  onPay,
   onHistory,
 }) {
   const [search, setSearch] = useState("");
@@ -210,6 +211,19 @@ function UserTable({
             {texts.ADJUST_CREDIT}
           </MenuItem>
         )}
+        {/* Paying out sale money only makes sense when there IS sale money
+            owed — the shop's own accounts and settled customers never show it. */}
+        {showCredit && Number(menu?.player?.saleMoney) > 0 && (
+          <MenuItem
+            onClick={() => {
+              const p = menu.player;
+              setMenu(null);
+              onPay(p);
+            }}
+          >
+            {texts.PAY}
+          </MenuItem>
+        )}
         {/* History lives on clients only for now (Federico's call) — where the
             purchases/sales/credit activity actually is. */}
         {showCredit && (
@@ -240,6 +254,7 @@ export default function Users() {
   // being adjusted.
   const [editing, setEditing] = useState(null);
   const [adjusting, setAdjusting] = useState(null);
+  const [paying, setPaying] = useState(null);
   const [viewingHistory, setViewingHistory] = useState(null);
 
   const navigate = useNavigate();
@@ -288,6 +303,7 @@ export default function Users() {
             rate={rate}
             onEdit={setEditing}
             onAdjustCredit={setAdjusting}
+            onPay={setPaying}
             onHistory={setViewingHistory}
           />
           <UserTable
@@ -297,6 +313,7 @@ export default function Users() {
             rate={rate}
             onEdit={setEditing}
             onAdjustCredit={setAdjusting}
+            onPay={setPaying}
             onHistory={setViewingHistory}
           />
         </div>
@@ -329,6 +346,23 @@ export default function Users() {
             rate={rate}
             onSaved={() => {
               setAdjusting(null);
+              load();
+            }}
+          />
+        )}
+      </SideForm>
+
+      <SideForm
+        open={Boolean(paying)}
+        onClose={() => setPaying(null)}
+        title={texts.PAY_TITLE}
+      >
+        {paying && (
+          <PayForm
+            player={paying}
+            rate={rate}
+            onSaved={() => {
+              setPaying(null);
               load();
             }}
           />
@@ -639,6 +673,91 @@ function AdjustCreditForm({ player, rate, onSaved }) {
 
       <Button variant="contained" disabled={saving || !valid} onClick={save}>
         {texts.SAVE}
+      </Button>
+    </Stack>
+  );
+}
+
+// Pay a consignor part (or all) of the SALE MONEY the store owes them, in
+// pesos. The field is capped at what is owed — you can never pay more than the
+// debt — and the balance that will remain is previewed so it is never a guess.
+// The server settles the oldest sales first and drops the debt by exactly this.
+function PayForm({ player, rate, onSaved }) {
+  const [amount, setAmount] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  // The debt in pesos (sale money is stored in dollars).
+  const owedPesos =
+    rate != null ? Math.round(Number(player.saleMoney ?? 0) * rate) : null;
+
+  const value = Number(amount);
+  const entered = amount.trim() !== "" && Number.isFinite(value) && value > 0;
+  const overMax = owedPesos != null && entered && value > owedPesos;
+  const valid = entered && owedPesos != null && !overMax;
+  const remainingPesos =
+    owedPesos != null && valid ? owedPesos - value : null;
+
+  function save() {
+    if (!valid) return;
+    setSaving(true);
+    accessAPI(
+      "POST",
+      `admin/player/${player.id}/pay`,
+      { pesos: value },
+      (response) => {
+        setSaving(false);
+        toast(
+          `${texts.PAY_DONE} (${formatPesos(response.paidpesos)})`,
+          "success"
+        );
+        onSaved();
+      },
+      (response) => {
+        setSaving(false);
+        toast(response.message);
+      }
+    );
+  }
+
+  return (
+    <Stack spacing={2}>
+      <Typography variant="subtitle1">{player.name}</Typography>
+      <Typography variant="body2" color="text.secondary">
+        {texts.PAY_OWED}:{" "}
+        <strong>{creditPesos(player.saleMoney, rate)}</strong>
+      </Typography>
+
+      <TextField
+        type="number"
+        label={texts.PAY_AMOUNT}
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        inputProps={{ min: 0, max: owedPesos ?? undefined, step: 1 }}
+        error={overMax}
+        helperText={overMax ? texts.PAY_OVER : ""}
+        autoFocus
+      />
+      {/* One tap to settle the whole debt, so the common case is not a manual
+          copy of the owed figure. */}
+      {owedPesos != null && (
+        <Button
+          size="small"
+          variant="text"
+          sx={{ alignSelf: "flex-start" }}
+          onClick={() => setAmount(String(owedPesos))}
+        >
+          {texts.PAY_ALL} ({formatPesos(owedPesos)})
+        </Button>
+      )}
+
+      {remainingPesos != null && (
+        <Typography variant="body2">
+          {texts.PAY_REMAINING}: <strong>{formatPesos(remainingPesos)}</strong>
+        </Typography>
+      )}
+
+      <Button variant="contained" disabled={saving || !valid} onClick={save}>
+        {texts.PAY}
       </Button>
     </Stack>
   );

@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import "./menu.css";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import Button from "@mui/material/Button";
-import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
 import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
@@ -12,8 +11,8 @@ import MenuIcon from "@mui/icons-material/Menu";
 import Stack from "@mui/material/Stack";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import texts from "../data/texts";
-import { logout, readFromLS } from "../utils/fetchFunctions";
-import { readRole, clearRole, isOwner } from "../utils/role";
+import { readFromLS } from "../utils/fetchFunctions";
+import { readRole, isOwner } from "../utils/role";
 
 // The routes in the bar, in order. `ownerOnly` marks the ones a shop hand does
 // not get. Keeping them as data rather than a dozen near-identical JSX blocks
@@ -26,7 +25,6 @@ const LINKS = [
   { to: "/orders", label: texts.ORDERS },
   { to: "/storage", label: texts.STORAGE },
   { to: "/pricing", label: texts.PRICING },
-  { to: "/payment", label: texts.PAYMENT },
   { to: "/users", label: texts.USERS },
   { to: "/account", label: texts.MY_ACCOUNT },
 ];
@@ -43,8 +41,6 @@ const itemSx = {
 };
 
 export default function Menu(props) {
-  const navigate = useNavigate();
-
   // Pages report loggedIn only after the session check answers, which left
   // the bar showing "Ingresar" for a beat on every navigation. A stored token
   // is a session until the server says otherwise (a 401 logs out and brings
@@ -86,12 +82,6 @@ export default function Menu(props) {
 
   const visible = LINKS.filter((link) => owner || !link.ownerOnly);
 
-  function doLogout() {
-    logout();
-    clearRole();
-    navigate("/login");
-  }
-
   if (narrow) {
     return (
       <>
@@ -119,10 +109,6 @@ export default function Menu(props) {
                 <ListItemText primary={link.label} />
               </ListItemButton>
             ))}
-            <Divider sx={{ my: 1 }} />
-            <ListItemButton onClick={doLogout}>
-              <ListItemText primary={texts.LOGOUT} />
-            </ListItemButton>
           </List>
         </Drawer>
       </>
@@ -148,15 +134,6 @@ export default function Menu(props) {
           <span className="label">{link.label}</span>
         </Button>
       ))}
-      <Button
-        variant="text"
-        disableRipple
-        className="logoutButton"
-        sx={itemSx}
-        onClick={doLogout}
-      >
-        {texts.LOGOUT}
-      </Button>
     </Stack>
   );
 }
