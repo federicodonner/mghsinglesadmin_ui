@@ -23,7 +23,7 @@ import { isFoil, finishLabel } from "../utils/finishes";
 import "./binder.css";
 
 // One row of a box.
-function Row({ card, sortable, mutate, withdrawable, onRemove, onWithdraw, onEditVersion, position }) {
+function Row({ card, sortable, mutate, withdrawable, onDuplicate, onRemove, onWithdraw, onEditVersion, position }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.placementid, disabled: !sortable });
 
@@ -75,11 +75,23 @@ function Row({ card, sortable, mutate, withdrawable, onRemove, onWithdraw, onEdi
       {isFoil(card.variant) && (
         <Chip size="small" color="secondary" label={finishLabel(card.variant)} />
       )}
-      {mutate && onEditVersion && (
+      {/* Another copy of the same printing: next to this one in a sorted
+          box, simply in the box when nothing has a place. */}
+      {mutate && onDuplicate && (
         <Button
           size="small"
           variant="outlined"
           sx={{ ml: "auto" }}
+          onClick={() => onDuplicate(card.placementid)}
+        >
+          {texts.DUPLICATE_COPY}
+        </Button>
+      )}
+      {mutate && onEditVersion && (
+        <Button
+          size="small"
+          variant="outlined"
+          sx={{ ml: onDuplicate ? 0 : "auto" }}
           onClick={() => onEditVersion(card)}
         >
           {texts.CHANGE_VERSION}
@@ -90,7 +102,7 @@ function Row({ card, sortable, mutate, withdrawable, onRemove, onWithdraw, onEdi
           size="small"
           variant="outlined"
           color="error"
-          sx={{ ml: mutate && onEditVersion ? 0 : "auto" }}
+          sx={{ ml: onDuplicate || onEditVersion ? 0 : "auto" }}
           onClick={() => onRemove(card.placementid)}
         >
           {texts.REMOVE_FROM_CONTAINER}
@@ -125,6 +137,7 @@ export default function BoxEditor({
   arrange,
   mutate,
   withdrawable,
+  onDuplicate,
   onRemove,
   onReorder,
   onWithdraw,
@@ -176,6 +189,7 @@ export default function BoxEditor({
           sortable={sortable}
           mutate={mutate}
           withdrawable={withdrawable}
+          onDuplicate={onDuplicate}
           onRemove={onRemove}
           onWithdraw={onWithdraw}
           onEditVersion={onEditVersion}

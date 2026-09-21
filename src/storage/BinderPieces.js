@@ -78,6 +78,7 @@ export function Pocket({
   expanded,
   onShift,
   onEditVersion,
+  onDuplicate,
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `pocket-${page}-${pocket}`,
@@ -111,20 +112,37 @@ export function Pocket({
               here must neither start a drag nor open the stack. */}
           {/* Change this card's version — a pen at the bottom of the
               card, hover-revealed. Only when the pocket holds a single
-              card: a stack's cards are edited from its dialog. */}
-          {onEditVersion && (
+              card: a stack's cards are edited from its dialog. Duplicate
+              sits beside it and files the new copy behind, in this same
+              pocket. */}
+          {(onEditVersion || onDuplicate) && (
             <Box className="editVersion">
-              <IconButton
-                size="small"
-                title={texts.CHANGE_VERSION}
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEditVersion();
-                }}
-              >
-                ✎
-              </IconButton>
+              {onDuplicate && (
+                <IconButton
+                  size="small"
+                  title={texts.DUPLICATE_COPY}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDuplicate();
+                  }}
+                >
+                  +
+                </IconButton>
+              )}
+              {onEditVersion && (
+                <IconButton
+                  size="small"
+                  title={texts.CHANGE_VERSION}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditVersion();
+                  }}
+                >
+                  ✎
+                </IconButton>
+              )}
             </Box>
           )}
           {onShift && (

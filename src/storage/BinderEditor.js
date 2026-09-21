@@ -40,9 +40,10 @@ import "./binder.css";
 // The stand-by area shows two kinds of card. A card DRAGGED there is only
 // lifted on screen: its placement keeps its pocket until it is dropped
 // somewhere else, so navigating away mid-sort leaves it exactly where it was —
-// never outside the binder. A card that arrives by add or duplicate really has
-// no pocket yet (page and pocket null on the server), which is why leaving
-// with those still waiting warns first.
+// never outside the binder. A card that arrives by add, or by duplicating a
+// stand-by card, really has no pocket yet (page and pocket null on the
+// server), which is why leaving with those still waiting warns first.
+// Duplicating a filed card is different: the copy is born in the same pocket.
 export default function BinderEditor({
   unit,
   arrange,
@@ -365,6 +366,13 @@ export default function BinderEditor({
                           ? () => onEditVersion(pocket.cards[0])
                           : null
                       }
+                      // Same gate as the pen: a stack's cards are duplicated
+                      // from its dialog, where each copy can be told apart.
+                      onDuplicate={
+                        mutate && onDuplicate && pocket.cards.length === 1
+                          ? () => onDuplicate(pocket.cards[0].placementid)
+                          : null
+                      }
                     />
                   ))}
                 </Box>
@@ -509,6 +517,15 @@ export default function BinderEditor({
                     last card leaves (nothing left to show), or via the
                     button. Lifting is on-screen only — the card keeps its
                     pocket until it is dropped somewhere else. */}
+                {mutate && onDuplicate && (
+                  <IconButton
+                    size="small"
+                    title={texts.DUPLICATE_COPY}
+                    onClick={() => onDuplicate(card.placementid)}
+                  >
+                    +
+                  </IconButton>
+                )}
                 {onEditVersion && (
                   <IconButton
                     size="small"

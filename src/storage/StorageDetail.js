@@ -334,6 +334,7 @@ export default function StorageDetail() {
                   arrange={unit.arrangeable}
                   mutate={unit.editable}
                   withdrawable={false}
+                  onDuplicate={duplicate}
                   onRemove={remove}
                   onReorder={reorder}
                   onEditVersion={unit.editable ? setChanging : null}

@@ -293,6 +293,7 @@
   bottom: 4px;
   right: 4px;
   display: none;
+  gap: 4px;
   z-index: 2;
 }
 .binderPocket:hover .editVersion {
