@@ -321,6 +321,8 @@ const texts = {
     "Este bolsillo tiene varias cartas. Mandá una a la zona de espera para moverla.",
   TO_STANDBY: "A espera",
   DUPLICATE_COPY: "Duplicar (tengo otra igual)",
+  DUPLICATE_FAILED: "No se pudo duplicar la carta:",
+  REMOVE_FAILED: "No se pudo sacar la carta:",
   DRAG_TO_REORDER: "Arrastrá para reordenar",
   UNSORTED_HINT:
     "Una caja sin ordenar no guarda posiciones; se lista alfabéticamente.",
