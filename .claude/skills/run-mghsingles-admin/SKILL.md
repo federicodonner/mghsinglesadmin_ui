@@ -1,14 +1,15 @@
 ---
 name: run-mghsingles-admin
-description: Build, run and drive the mghsingles admin UI headlessly. Use when asked to start the admin app, screenshot an admin page, test the superuser login or the sell or payment flow, or verify a React change in the running admin app.
+description: Build, run and drive the mghsingles admin UI headlessly. Use when asked to start the admin app, screenshot an admin page, test the staff/owner login or the sell or orders flow, or verify a React change in the running admin app.
 ---
 
 # Run the mghsingles admin UI
 
 Create React App 5 + React 18 + react-router 6 + MUI 7. Spanish-language back office for
-`mghsingles_api` (sell cards, register payments). Same shape as the customer UI
-but **superuser-gated**, and themed dark blue instead of orange — a fast way to
-tell the two apps' screenshots apart.
+`mghsingles_api` (sell cards, orders, storage, pricing, users). Same shape as
+the customer UI but **role-gated** — only `staff` or `owner` players get in —
+and themed dark blue instead of orange — a fast way to tell the two apps'
+screenshots apart.
 
 The agent path is `.claude/skills/run-mghsingles-admin/driver.mjs`: a
 headless-Chrome REPL that reads one command per line on stdin, so a whole flow
@@ -23,12 +24,20 @@ All paths below are relative to `mghsingles_ui/mghsingles_admin/`.
 - Google Chrome at `/Applications/Google Chrome.app`
 - A running `mghsingles_api` with a seeded database — see the
   `run-mghsingles-api` skill in `mghsingles_api/`.
-- **A user with `superuser = true`.** Nothing in this app works without it and
-  no API route grants it:
+- **A player with `role = 'staff'` or `'owner'`.** There is no `superuser`
+  column any more; authorization is the `role` enum on `player`
+  (`customer`/`staff`/`owner`), and nothing in this app works for a `customer`.
+  Login is by **email**, not username. Check who exists:
 
   ```bash
-  psql -d mghsingles -c "UPDATE player SET superuser=true WHERE username='devuser';"
+  psql -d mghsingles -c "SELECT username, email, role FROM player ORDER BY role, username;"
   ```
+
+  The current dev database has `fede` (owner), `lucia` (staff) and customers
+  `ana`/`diego`/`martin`/`sofia`, all `<username>@example.com`. Passwords follow
+  `scripts/seedDev.mjs`'s rule `<username>1234` (e.g. `fede@example.com` /
+  `fede1234`) — but the passwordless token trick below needs none of them.
+  Do NOT reseed or edit this data; it is managed by hand.
 
 ## Setup
 
@@ -58,12 +67,16 @@ Then drive it:
 UI_URL=http://localhost:3102 node .claude/skills/run-mghsingles-admin/driver.mjs <<'EOF'
 goto /login
 waitms 1200
-fill 'input[placeholder="Usuario"]' devuser
-fill 'input[placeholder="Contraseña"]' devpass123
+fill 'input[placeholder="Email"]' fede@example.com
+fill 'input[placeholder="Contraseña"]' fede1234
 click button.login
 waitms 2000
 clicktext Vender
 waitms 2500
+fill input.MuiAutocomplete-input bolt
+waitms 1500
+click form.sellSearch button[type=submit]
+waitms 2000
 shot admin-sell
 ls
 text
@@ -71,7 +84,7 @@ net
 EOF
 ```
 
-Verified output:
+Verified output (MUI utility classes elided):
 
 ```
 > click button.login
@@ -84,11 +97,14 @@ clicked text "Vender" -> http://localhost:3102/sell
 wrote .../run-mghsingles-admin/shots/admin-sell.png
 
 > ls
-a class="selectedButton menuElement" :: Vender
-a class="menuElement" :: Pagar
-a class="menuElement" :: Cuenta
-input type=text ph="Escribe el nombre de la carta"
-button type=submit class="dark search" :: Buscar
+a class="MuiButtonBase-root MuiButton-root ... active" :: Vender
+a class="MuiButtonBase-root MuiButton-root ..." :: Pedidos
+a class="MuiButtonBase-root MuiButton-root ..." :: Contenedores
+a class="MuiButtonBase-root MuiButton-root ..." :: Precios
+a class="MuiButtonBase-root MuiButton-root ..." :: Usuarios
+a class="MuiButtonBase-root MuiButton-root ..." :: Cuenta
+input type=text class="... MuiAutocomplete-input ..." ph="Escribe el nombre de la carta"
+button type=submit class="MuiButtonBase-root MuiButton-root ..." :: Buscar
 ```
 
 Screenshots land in `.claude/skills/run-mghsingles-admin/shots/`
@@ -100,7 +116,7 @@ Screenshots land in `.claude/skills/run-mghsingles-admin/shots/`
 |---|---|
 | `goto <path\|url>` | Navigate (paths resolve against `UI_URL`), then wait 700ms for React to mount |
 | `ls` | List every input/button/link/select with usable selectors — **start here** |
-| `fill <selector> <value>` | Fill a field. **Quote the selector** if it contains spaces: `fill 'input[placeholder="Escribe el nombre de la carta"]' bolt` |
+| `fill <selector> <value>` | Fill a field. **Quote the selector** if it contains spaces: `fill 'input[placeholder="Email"]' fede@example.com`. The sell search is a MUI Autocomplete — fill it via `fill input.MuiAutocomplete-input bolt` |
 | `click <selector>` | Click, then wait 700ms |
 | `clicktext <text>` | Click by visible text — the nav links have no stable ids |
 | `text [selector]` | innerText of `body` (or a selector) |
@@ -115,12 +131,14 @@ Screenshots land in `.claude/skills/run-mghsingles-admin/shots/`
 Set `HEADFUL=1` to watch the browser. Lines starting with `#` are comments.
 The driver exits non-zero if any command failed.
 
-Skipping the login form:
+Skipping the login form — **no password needed**. A token is just a row in the
+`login` table, so insert one for the player you want, use it, and delete it at
+the end (verified: `admin/me` answers 200 for an owner token minted this way):
 
 ```bash
-TOK=$(curl -s -X POST http://localhost:3101/oauth -H 'Content-Type: application/json' \
-  -d '{"username":"devuser","password":"devpass123"}' \
-  | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).token')
+TOK="skilltoken$RANDOM$RANDOM"
+psql -d mghsingles -qc "INSERT INTO login (playerid, token, date) \
+  SELECT id, '$TOK', now() FROM player WHERE email='fede@example.com';"
 UI_URL=http://localhost:3102 node .claude/skills/run-mghsingles-admin/driver.mjs <<EOF
 goto /
 token $TOK
@@ -128,6 +146,15 @@ goto /sell
 waitms 2000
 shot sell
 EOF
+psql -d mghsingles -qc "DELETE FROM login WHERE token='$TOK';"
+```
+
+With a real password, `POST /oauth` works too — the body field is `email`:
+
+```bash
+TOK=$(curl -s -X POST http://localhost:3101/oauth -H 'Content-Type: application/json' \
+  -d '{"email":"fede@example.com","password":"fede1234"}' \
+  | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).token')
 ```
 
 ## Run (human path)
@@ -148,16 +175,18 @@ without a `PORT` override.
   in `src/theme.js`. Two consequences when driving it:
 
   - **Class names are MUI's**, e.g. `MuiButton-root MuiButton-contained ...`,
-    plus any `className` the component passes through. The hooks the flows below
-    rely on — `button.login`, `button.create`, `button.search` — are still
-    present, because they are passed as `className` deliberately. Anything else,
-    run `ls` and read the real classes rather than guessing.
-  - **`input[placeholder="..."]` still works.** A `TextField` renders a real
-    `<input>` with the placeholder on it; the Spanish text is unchanged
-    (`input[placeholder="Usuario"]`, `input[placeholder="Contraseña"]` — note
-    the accented `ñ`). Selects are `TextField select` with
-    `SelectProps={{native: true}}`, so they are still real `<select>` elements
-    with `<option>` children and `fill` works on them.
+    plus any `className` the component passes through. The only hook still
+    passed as `className` is `button.login`; the old `button.search` is gone —
+    the sell search submit is `form.sellSearch button[type=submit]`. Anything
+    else, run `ls` and read the real classes rather than guessing.
+  - **Selectors for the fields.** Login is by email now:
+    `input[placeholder="Email"]` and `input[placeholder="Contraseña"]` (note
+    the accented `ñ`). The card-name search is a MUI `Autocomplete`
+    (`src/elementos/CardNameAutocomplete.js`), so target its input by class:
+    `input.MuiAutocomplete-input` — do not rely on the placeholder selector
+    for it. Selects are `TextField select` with `SelectProps={{native: true}}`,
+    so they are still real `<select>` elements with `<option>` children and
+    `fill` works on them.
 
   Do NOT restyle a button by editing CSS — set the MUI props (`variant`,
   `color`, `size`) or change the theme. The old `.dark` / `.light` / `.orange`
@@ -188,49 +217,52 @@ without a `PORT` override.
   therefore keep independent sessions in one browser profile — but see the
   single-token gotcha below, the *API* does not.
 
-- **A non-superuser is bounced silently back to `/login`.** `POST /oauth`
-  succeeds for any valid user, then `GET /admin/me` 403s and the app returns to
-  the login form with **no error message** — it just looks like the click didn't
-  register. The tell is `403 GET /admin/me` in `net` output. Verified with a
-  plain user: `clicked button.login -> http://localhost:3102/login`. Check with
-  `psql -d mghsingles -c "SELECT username,superuser FROM player;"`
+- **A `customer`-role player is bounced silently back to `/login`.**
+  `POST /oauth` succeeds for any valid user, then `GET /admin/me` 403s and the
+  app returns to the login form with **no error message** — it just looks like
+  the click didn't register. The tell is `403 GET /admin/me` in `net` output.
+  Check roles with
+  `psql -d mghsingles -c "SELECT username,email,role FROM player;"`
 
-  The seeded database already carries `plainuser` / `plainpass123` (superuser
-  false) for exercising this path deliberately.
+  To exercise this path deliberately, mint a token for a customer (e.g.
+  `ana@example.com`) with the SQL insert above — verified: `admin/me` answers
+  403 for it while `player/me` answers 200.
 
 - **`goto /` while unauthenticated lands on `/login`**, so a bare `goto /` in a
   driver script is a fine way to get to the login form.
 
 - **`ls` before you write selectors.** The login button is `button.login`; the
-  sell search is `button.search`. Inputs have no `name` or `id`, only Spanish
-  placeholders — note the accented `ñ` in `input[placeholder="Contraseña"]`.
+  sell search submit is `form.sellSearch button[type=submit]`. Inputs have no
+  `name` and only MUI's generated `id`s — use the placeholders
+  (`input[placeholder="Email"]`, `input[placeholder="Contraseña"]` — note the
+  accented `ñ`) or, for the card search, `input.MuiAutocomplete-input`.
 
 - **Login navigates to `/home`, which is not in `Router.js`.** It falls through
   the `*` route to `Home`, the same component as `/`.
 
-- **A `403 GET /player/me` on every page load is normal** — the header probes it
+- **A `401 GET /player/me` on every page load is normal** — the header probes it
   unauthenticated to decide which menu to render.
 
-- **`Pagar` and the sell search both work now.** `GET /collection/all` and
-  `GET /store/search/:name` used to throw in the API without responding, leaving
-  an empty `Usuario` dropdown and a search that did nothing. Fixed in the API.
-
-  Endpoints per page: `/home` → `admin/me`; `/sell` → `admin/me`,
-  `store/search/:name`, `admin/sale`; `/payment` → `admin/me`, `collection/all`,
-  `admin/payment`.
+- **The menu is Vender / Pedidos / Contenedores / Precios / Usuarios / Cuenta.**
+  The old `Pagar` page is gone. Routes: `/sell`, `/orders`, `/storage` (+
+  `/storage/:id`), `/pricing`, `/users`, `/account`; everything else falls
+  through to `Home`. The sell search suggests names from
+  `GET card/names?q=...&stock=1` (stock only) and every admin page probes
+  `admin/me`.
 
 - **One bad field blanks the entire page.** There is no error boundary, so a
   render-time `TypeError` in one card unmounts the whole route and you get a
   white screen with no message. Run `console` to see the real cause. The sell
   components read `card.cardsetcode`, not `card.cardset`.
 
-- **Only the newest API token per player is valid.** Logging into the admin app
-  as `devuser` invalidates the customer app's token for that same user, and vice
-  versa. Use two different players if you need both apps live at once.
+- **Sessions coexist now.** The API used to honour only the newest token per
+  player; `middleware/authentication.js` now accepts any token that exists in
+  the `login` table, so the admin app, the customer app and an injected psql
+  token can all be live as the same player at once.
 
-- **Verified working end to end:** login, `/home`, `/sell` (search returns
-  results with a price and a `Finalizar venta` button), `/payment` (user
-  dropdown populated), `/account`.
+- **Verified working end to end (2026-09-22):** login by email, `/home`,
+  `/sell` (autocomplete fill + `Buscar`), `/account`, and the psql
+  token-injection path.
 
 ## Troubleshooting
 
@@ -239,7 +271,7 @@ without a `PORT` override.
 | `Error: listen EADDRINUSE :::3000` | `BROWSER=none PORT=3102 npx react-scripts start` |
 | Driver: `Chromium distribution 'chrome' is not found` | Install Google Chrome, or set `channel` in `driver.mjs` |
 | `Cannot find module 'playwright-core'` | `cd .claude/skills/run-mghsingles-admin && npm install` |
-| Login click seems ignored, URL stays `/login` | User is not superuser — `UPDATE player SET superuser=true ...` |
+| Login click seems ignored, URL stays `/login` | Player's `role` is `customer` — check `SELECT email,role FROM player;` and log in as `fede@example.com` (owner) or `lucia@example.com` (staff) |
 | Blank page, `net` shows `ECONNREFUSED :3101` | API isn't running, or `REACT_APP_API_URL` points at the wrong port |
 | Login does nothing, `net` shows `404 POST /oauth` | `REACT_APP_API_URL` unset — CRA bakes it in **at start time**, so restart the dev server after changing it |
 | You're looking at an orange page | That's the customer UI on another port; the admin UI is dark blue |
