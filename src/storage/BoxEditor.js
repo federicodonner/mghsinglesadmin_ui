@@ -16,11 +16,18 @@ import { CSS } from "@dnd-kit/utilities";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import texts from "../data/texts";
+import PreviewCarta from "../elementos/PreviewCarta";
 import { isFoil, finishLabel } from "../utils/finishes";
 import "./binder.css";
+
+// A box holds hundreds of copies, and a single endless list makes the page
+// heavy and the scrollbar useless. Ten rows fit on a screen without
+// scrolling, so the pager is the only thing to reach for.
+const PAGE_SIZE = 10;
 
 // One row of a box.
 function Row({ card, sortable, mutate, withdrawable, onDuplicate, onRemove, onWithdraw, onEditVersion, position }) {
@@ -57,15 +64,12 @@ function Row({ card, sortable, mutate, withdrawable, onDuplicate, onRemove, onWi
           #{position}
         </Typography>
       )}
-      {card.image && (
-        <Box
-          component="img"
-          src={card.image}
-          alt={card.name}
-          loading="lazy"
-          sx={{ width: 38, height: 53, borderRadius: 0.5, flex: "0 0 auto" }}
-        />
-      )}
+      <PreviewCarta
+        image={card.image}
+        name={card.name}
+        small
+        sx={{ width: 38, height: 53, borderRadius: 0.5 }}
+      />
       <Typography sx={{ fontWeight: 600, flex: "1 1 160px", minWidth: 0 }}>
         {card.name}
       </Typography>
@@ -165,6 +169,14 @@ export default function BoxEditor({
           .slice()
           .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
 
+  // Clamped rather than reset: removing the last card of the last page must
+  // land on the (new) last page, not jump back to the first.
+  const [page, setPage] = useState(1);
+  const pageCount = Math.max(1, Math.ceil(cards.length / PAGE_SIZE));
+  const curPage = Math.min(page, pageCount);
+  const offset = (curPage - 1) * PAGE_SIZE;
+  const visible = cards.slice(offset, offset + PAGE_SIZE);
+
   function handleDragEnd(event) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -182,7 +194,7 @@ export default function BoxEditor({
 
   const list = (
     <Stack spacing={0.75}>
-      {cards.map((card, index) => (
+      {visible.map((card, index) => (
         <Row
           key={card.placementid}
           card={card}
@@ -193,26 +205,48 @@ export default function BoxEditor({
           onRemove={onRemove}
           onWithdraw={onWithdraw}
           onEditVersion={onEditVersion}
-          position={unit.type === "sorted_box" ? index + 1 : null}
+          position={unit.type === "sorted_box" ? offset + index + 1 : null}
         />
       ))}
     </Stack>
   );
 
-  if (!sortable) return list;
+  const pager = pageCount > 1 && (
+    <Pagination
+      count={pageCount}
+      page={curPage}
+      onChange={(e, next) => setPage(next)}
+      sx={{ display: "flex", justifyContent: "center", my: 1.5 }}
+    />
+  );
 
-  return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
-      <SortableContext
-        items={cards.map((c) => c.placementid)}
-        strategy={verticalListSortingStrategy}
-      >
+  if (!sortable) {
+    return (
+      <>
         {list}
-      </SortableContext>
-    </DndContext>
+        {pager}
+      </>
+    );
+  }
+
+  // Dragging reorders within the visible page (the drop targets are the rows
+  // on screen), but the order saved is always the WHOLE box: the moved row is
+  // spliced into the full list, so positions on other pages shift correctly.
+  return (
+    <>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={visible.map((c) => c.placementid)}
+          strategy={verticalListSortingStrategy}
+        >
+          {list}
+        </SortableContext>
+      </DndContext>
+      {pager}
+    </>
   );
 }
