@@ -17,7 +17,16 @@ import Typography from "@mui/material/Typography";
 // add-card panel's version rows carry controls that need the room.
 export default function SideForm({ open, onClose, title, width = 360, children }) {
   return (
-    <Drawer anchor="right" open={open} onClose={onClose}>
+    // Above dialogs on purpose: changing a card's version from an open
+    // pocket popup slides this in, and a form nobody can reach behind the
+    // popup is a dead end. The stacking order across the app is: dialogs,
+    // then this, then the card-zoom popup, then the confirm prompt.
+    <Drawer
+      anchor="right"
+      open={open}
+      onClose={onClose}
+      sx={{ zIndex: (theme) => theme.zIndex.modal + 1 }}
+    >
       <Box
         sx={{
           width: { xs: "94vw", sm: `min(${width}px, 94vw)` },

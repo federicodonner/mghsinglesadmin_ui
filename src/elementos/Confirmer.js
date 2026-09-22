@@ -30,7 +30,13 @@ export default function Confirmer() {
   }
 
   return (
-    <Dialog open={Boolean(asking)} onClose={() => answer(false)}>
+    // Top of the stacking order (dialogs < side forms < card zoom < this):
+    // a question that needs answering must never open behind anything.
+    <Dialog
+      open={Boolean(asking)}
+      onClose={() => answer(false)}
+      sx={{ zIndex: (theme) => theme.zIndex.modal + 3 }}
+    >
       <DialogContent>
         <DialogContentText>{asking?.message}</DialogContentText>
       </DialogContent>

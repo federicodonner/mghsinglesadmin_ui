@@ -71,6 +71,24 @@ const theme = createTheme({
     MuiTooltip: {
       defaultProps: { arrow: true },
     },
+
+    // Transient surfaces (select menus, autocomplete suggestions) spawn from
+    // whatever is under the cursor and must float above it. Their MUI default
+    // z-index equals the Dialog/Drawer one (1300), which worked only while
+    // every layer tied and DOM order decided; the app now stacks its surfaces
+    // explicitly (dialogs 1300 < side forms +1 < card zoom +2 < confirm +3 —
+    // see SideForm/PreviewCarta/Confirmer), so these go above them all.
+    MuiPopover: {
+      styleOverrides: { root: ({ theme }) => ({ zIndex: theme.zIndex.modal + 10 }) },
+    },
+    MuiPopper: {
+      defaultProps: { sx: { zIndex: (theme) => theme.zIndex.modal + 10 } },
+    },
+    MuiAutocomplete: {
+      styleOverrides: {
+        popper: ({ theme }) => ({ zIndex: theme.zIndex.modal + 10 }),
+      },
+    },
   },
 });
 
