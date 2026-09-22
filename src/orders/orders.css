@@ -79,12 +79,13 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The name hugs its text so the set code sits right beside it — the price's
+   margin-left: auto absorbs the slack instead. */
 .lineName {
-  flex: 1 1 180px;
+  flex: 0 1 auto;
 }
 
 .lineSet {
-  min-width: 56px;
   color: #33586b;
   font-size: 0.85em;
 }
