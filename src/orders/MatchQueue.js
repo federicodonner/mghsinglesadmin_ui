@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { toast } from "../utils/toast";
 import { confirmDialog } from "../utils/confirm";
 import texts from "../data/texts";
+import PreviewCarta from "../elementos/PreviewCarta";
 import { accessAPI } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
 import { useExchangeRate, pesosLive } from "../utils/exchange";
@@ -18,7 +19,7 @@ import Title from "../elementos/Title";
 // notice (a match appears without anyone doing anything), and it now lives on
 // the home page for exactly that reason: it is the first thing to see when
 // opening the till, not something buried under the order list.
-export default function MatchQueue() {
+export default function MatchQueue({ onLoaded }) {
   const [matches, setMatches] = useState([]);
   // Live prices here: nothing is frozen until the copy is actually bagged,
   // so the pesos shown track today's rate the same way the dollars track
@@ -37,13 +38,18 @@ export default function MatchQueue() {
         // Drop any stale copy choice: a placement just bagged is gone from the
         // next list, so start each reload from the default (nearest) copy.
         setChosen({});
+        onLoaded?.();
       },
-      () => setMatches([])
+      () => {
+        setMatches([]);
+        onLoaded?.();
+      }
     );
   }
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function actOnMatch(match, action, confirmText) {
@@ -136,9 +142,12 @@ export default function MatchQueue() {
                 return Array.from({ length: copies }, (_, copyIndex) => (
             <div className="matchBlock" key={`${match.id}-${copyIndex}`}>
               <div className="matchRow">
-                {match.image && (
-                  <img className="matchThumb" src={match.image} alt={match.name} />
-                )}
+                <PreviewCarta
+                  image={match.image}
+                  name={match.name}
+                  small
+                  className="matchThumb"
+                />
                 <span className="lineName">{match.name}</span>
                 <span className="lineSet">
                   {(match.cardsetcode ?? "").toUpperCase()}

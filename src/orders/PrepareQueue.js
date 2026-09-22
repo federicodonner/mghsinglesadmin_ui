@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "../utils/toast";
 import texts from "../data/texts";
+import PreviewCarta from "../elementos/PreviewCarta";
 import { accessAPI } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
 import { useExchangeRate, pesosLive } from "../utils/exchange";
@@ -14,7 +15,7 @@ import Title from "../elementos/Title";
 // this is where the shop goes to fetch them, one card at a time, and mark each
 // as separated. When the last copy of an order is pulled it leaves this queue
 // and becomes a normal pick-up.
-export default function PrepareQueue() {
+export default function PrepareQueue({ onLoaded }) {
   const [orders, setOrders] = useState([]);
   const rate = useExchangeRate();
 
@@ -23,13 +24,20 @@ export default function PrepareQueue() {
       "GET",
       "admin/prepare",
       null,
-      (response) => setOrders(response ?? []),
-      () => setOrders([])
+      (response) => {
+        setOrders(response ?? []);
+        onLoaded?.();
+      },
+      () => {
+        setOrders([]);
+        onLoaded?.();
+      }
     );
   }
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function pull(copy) {
@@ -58,9 +66,12 @@ export default function PrepareQueue() {
           {order.copies.map((copy) => (
             <div className="matchBlock" key={copy.placementid}>
               <div className="matchRow">
-                {copy.image && (
-                  <img className="matchThumb" src={copy.image} alt={copy.name} />
-                )}
+                <PreviewCarta
+                  image={copy.image}
+                  name={copy.name}
+                  small
+                  className="matchThumb"
+                />
                 <span className="lineName">{copy.name}</span>
                 <span className="lineSet">
                   {(copy.cardsetcode ?? "").toUpperCase()}

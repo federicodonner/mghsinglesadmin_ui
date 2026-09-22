@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import SideForm from "../elementos/SideForm";
 import SetStockPriceSidebar from "./SetStockPriceSidebar";
 import texts from "../data/texts";
+import PreviewCarta from "../elementos/PreviewCarta";
 import { accessAPI } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
 import "../orders/orders.css";
@@ -16,7 +17,7 @@ import Chip from "@mui/material/Chip";
 // the pricing pipeline; everything listed is a rare/mythic/special with no
 // CardKingdom reference. Pricing one opens the same "fijar precio" form as the
 // Precios page, pre-seeded to the card.
-export default function UnpricedQueue() {
+export default function UnpricedQueue({ onLoaded }) {
   const [rows, setRows] = useState([]);
   // The card whose price is being set, or null. Keyed into the sidebar so a
   // different card re-seeds the form.
@@ -27,13 +28,20 @@ export default function UnpricedQueue() {
       "GET",
       "admin/unpriced",
       null,
-      (response) => setRows(response ?? []),
-      () => setRows([])
+      (response) => {
+        setRows(response ?? []);
+        onLoaded?.();
+      },
+      () => {
+        setRows([]);
+        onLoaded?.();
+      }
     );
   }
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!rows.length) return null;
@@ -44,14 +52,12 @@ export default function UnpricedQueue() {
       <div className="demandHint">{texts.UNPRICED_HINT}</div>
       {rows.map((row) => (
         <div className="unpricedRow" key={row.cardid}>
-          {row.image && (
-            <img
-              className="unpricedThumb"
-              src={row.image}
-              alt={row.name}
-              loading="lazy"
-            />
-          )}
+          <PreviewCarta
+            image={row.image}
+            name={row.name}
+            small
+            className="unpricedThumb"
+          />
           <span className="lineName">{row.name}</span>
           <span className="lineSet">
             {(row.cardsetcode ?? "").toUpperCase()}

@@ -11,7 +11,7 @@ import Button from "@mui/material/Button";
 // placement, so this survives reloads and shifts — and on the home page,
 // because until these are back in their pockets the containers on the shelf
 // are lying about what is in them.
-export default function RefileQueue() {
+export default function RefileQueue({ onLoaded }) {
   const [rows, setRows] = useState([]);
 
   function load() {
@@ -19,13 +19,20 @@ export default function RefileQueue() {
       "GET",
       "admin/refile",
       null,
-      (response) => setRows(response ?? []),
-      () => setRows([])
+      (response) => {
+        setRows(response ?? []);
+        onLoaded?.();
+      },
+      () => {
+        setRows([]);
+        onLoaded?.();
+      }
     );
   }
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function done() {
