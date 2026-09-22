@@ -278,11 +278,15 @@
   height: 22px;
   font-size: 14px;
   line-height: 1;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.55);
+  /* White chip with a dark glow, like the stand-by actions: a translucent
+     dark button disappeared into dark artwork. */
+  color: rgba(0, 0, 0, 0.82);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.55);
 }
 .binderPocket .shiftActions .MuiIconButton-root:hover {
-  background: rgba(0, 0, 0, 0.8);
+  background: #fff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.95), 0 0 4px rgba(0, 0, 0, 0.4);
 }
 
 /* The change-version pen: bottom-right of a single-card pocket, revealed on
@@ -304,9 +308,12 @@
   height: 22px;
   font-size: 13px;
   line-height: 1;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.55);
+  /* Same white-chip treatment as the shift arrows and stand-by actions. */
+  color: rgba(0, 0, 0, 0.82);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.55);
 }
 .binderPocket .editVersion .MuiIconButton-root:hover {
-  background: rgba(0, 0, 0, 0.8);
+  background: #fff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.95), 0 0 4px rgba(0, 0, 0, 0.4);
 }
