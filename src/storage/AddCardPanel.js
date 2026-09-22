@@ -4,6 +4,7 @@ import "./addCard.css";
 import { accessAPI } from "../utils/fetchFunctions";
 import { finishesFor, finishLabel, isFoil, DEFAULT_FINISH } from "../utils/finishes";
 import texts from "../data/texts";
+import PreviewCarta from "../elementos/PreviewCarta";
 import CatalogueSearch from "./CatalogueSearch";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -59,12 +60,11 @@ function VersionRow({
       }}
     >
       {version.image ? (
-        <Box
-          component="img"
-          src={version.image}
-          alt={version.name}
-          loading="lazy"
-          sx={{ width: 40, height: 56, borderRadius: 0.5, flex: "0 0 auto" }}
+        <PreviewCarta
+          image={version.image}
+          name={version.name}
+          small
+          sx={{ width: 40, height: 56, borderRadius: 0.5 }}
         />
       ) : (
         <Box

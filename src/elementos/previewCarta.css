@@ -1,0 +1,59 @@
+/* PreviewCarta — hover magnifier on every card image. */
+
+.previewCarta {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+  line-height: 0;
+}
+
+/* For images sized by their container (width/height 100% via CSS). */
+.previewCartaFill {
+  width: 100%;
+  height: 100%;
+}
+.previewCartaFill > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.previewCarta .previewCartaZoom {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  display: none;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+}
+.previewCarta .previewCartaZoom .MuiSvgIcon-root {
+  font-size: 24px;
+}
+.previewCarta:hover .previewCartaZoom {
+  display: inline-flex;
+}
+.previewCarta .previewCartaZoom:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* Thumbnails have no corner to spare: the magnifier veils the whole card,
+   centred, and appears only on hover. */
+.previewCartaSmall .previewCartaZoom {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.45);
+}
+.previewCartaSmall .previewCartaZoom .MuiSvgIcon-root {
+  font-size: 20px;
+}
+.previewCartaSmall .previewCartaZoom:hover {
+  background: rgba(0, 0, 0, 0.6);
+}

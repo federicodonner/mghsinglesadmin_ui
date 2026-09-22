@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { toast } from "../utils/toast";
 import { accessAPI } from "../utils/fetchFunctions";
 import texts from "../data/texts";
+import PreviewCarta from "../elementos/PreviewCarta";
 import { isFoil, finishLabel } from "../utils/finishes";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -56,14 +57,12 @@ export default function SetStockPriceSidebar({ card, onDone }) {
     <Stack spacing={2}>
       {/* The one card being priced — no picker, this is it. */}
       <Stack direction="row" spacing={1.5} alignItems="center">
-        {card.image && (
-          <Box
-            component="img"
-            src={card.image}
-            alt={card.name}
-            sx={{ width: 56, borderRadius: 1, flex: "0 0 auto" }}
-          />
-        )}
+        <PreviewCarta
+          image={card.image}
+          name={card.name}
+          small
+          sx={{ width: 56, borderRadius: 1 }}
+        />
         <Box sx={{ minWidth: 0 }}>
           <Typography variant="subtitle1">{card.name}</Typography>
           <Typography variant="caption" color="text.secondary">

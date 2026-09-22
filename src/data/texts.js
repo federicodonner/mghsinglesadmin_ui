@@ -322,6 +322,7 @@ const texts = {
   TO_STANDBY: "A espera",
   DUPLICATE_COPY: "Duplicar (tengo otra igual)",
   DUPLICATE_FAILED: "No se pudo duplicar la carta:",
+  ZOOM_CARD: "Ampliar carta",
   REMOVE_FAILED: "No se pudo sacar la carta:",
   DRAG_TO_REORDER: "Arrastrá para reordenar",
   UNSORTED_HINT:

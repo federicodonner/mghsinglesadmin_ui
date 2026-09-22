@@ -19,6 +19,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import texts from "../data/texts";
+import PreviewCarta from "../elementos/PreviewCarta";
 import { isFoil, finishLabel } from "../utils/finishes";
 import { DraggableCard, Pocket, StandbyZone } from "./BinderPieces";
 import "./binder.css";
@@ -481,14 +482,12 @@ export default function BinderEditor({
                 spacing={1.5}
                 alignItems="center"
               >
-                {card.image && (
-                  <Box
-                    component="img"
-                    src={card.image}
-                    alt={card.name}
-                    sx={{ width: 40, height: 56, borderRadius: 0.5 }}
-                  />
-                )}
+                <PreviewCarta
+                  image={card.image}
+                  name={card.name}
+                  small
+                  sx={{ width: 40, height: 56, borderRadius: 0.5 }}
+                />
                 <Typography sx={{ flex: 1, fontWeight: 600 }}>
                   {card.name}
                 </Typography>

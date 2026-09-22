@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { toast } from "../utils/toast";
 import { accessAPI } from "../utils/fetchFunctions";
 import texts from "../data/texts";
+import PreviewCarta from "../elementos/PreviewCarta";
 import CatalogueSearch from "../storage/CatalogueSearch";
 import "../storage/addCard.css";
 import Alert from "@mui/material/Alert";
@@ -184,15 +185,12 @@ export default function FixedPriceSidebar({ onFixed, initialName }) {
                 sx={{ py: 1, borderBottom: "1px solid", borderColor: "divider" }}
               >
                 <Stack direction="row" spacing={1} alignItems="center">
-                  {version.image && (
-                    <Box
-                      component="img"
-                      src={version.image}
-                      alt={version.name}
-                      loading="lazy"
-                      sx={{ width: 32, height: 45, borderRadius: 0.5, flex: "0 0 auto" }}
-                    />
-                  )}
+                  <PreviewCarta
+                    image={version.image}
+                    name={version.name}
+                    small
+                    sx={{ width: 32, height: 45, borderRadius: 0.5 }}
+                  />
                   <Box sx={{ minWidth: 0 }}>
                     <Typography variant="body2" noWrap>
                       {version.cardsetname}

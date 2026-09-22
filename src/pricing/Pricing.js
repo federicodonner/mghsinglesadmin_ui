@@ -7,6 +7,7 @@ import FixedPriceSidebar from "./FixedPriceSidebar";
 import Loader from "../loader/Loader";
 import { useNavigate } from "react-router-dom";
 import texts from "../data/texts";
+import PreviewCarta from "../elementos/PreviewCarta";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
 import "./pricing.css";
@@ -128,15 +129,12 @@ export default function Pricing() {
   function cardCell(row) {
     return (
       <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-        {row.image && (
-          <Box
-            component="img"
-            src={row.image}
-            alt={row.name}
-            loading="lazy"
-            sx={{ width: 32, height: 45, borderRadius: 0.5 }}
-          />
-        )}
+        <PreviewCarta
+          image={row.image}
+          name={row.name}
+          small
+          sx={{ width: 32, height: 45, borderRadius: 0.5 }}
+        />
         <Box>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
             {row.name}

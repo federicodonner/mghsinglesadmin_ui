@@ -13,6 +13,7 @@ import { isFoil, finishLabel } from "../utils/finishes";
 import { locationLabel } from "../utils/locationLabel";
 import { useExchangeRate, pesosLive, pesosFrozen, formatPesos } from "../utils/exchange";
 import texts from "../data/texts";
+import PreviewCarta from "../elementos/PreviewCarta";
 import Button from "@mui/material/Button";
 
 // A sale over the counter, on the same rails as a reservation.
@@ -187,14 +188,11 @@ export default function Sell() {
               <div className="sellResult" key={card.id}>
                 {/* The version, seen: at the counter the card is in somebody's
                     hand, and matching art beats reading a set code. */}
-                {card.image && (
-                  <img
-                    className="sellResultArt"
-                    src={card.image}
-                    alt={card.name}
-                    loading="lazy"
-                  />
-                )}
+                <PreviewCarta
+                  image={card.image}
+                  name={card.name}
+                  className="sellResultArt"
+                />
                 <div className="sellResultBody">
                   <div className="orderLine sellResultHead">
                     <span className="lineName">{card.name}</span>
