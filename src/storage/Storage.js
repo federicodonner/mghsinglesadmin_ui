@@ -14,7 +14,9 @@ import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -31,6 +33,7 @@ const TYPE_LABELS = {
   binder: texts.BINDER,
   sorted_box: texts.SORTED_BOX,
   unsorted_box: texts.UNSORTED_BOX,
+  edition_box: texts.EDITION_BOX,
 };
 
 // The label for a move depends on where it starts, not just where it lands:
@@ -87,9 +90,20 @@ export default function Storage() {
   // The owner chosen in the edit form's autocomplete: an option object
   // { id: "shop" | <playerid>, label }.
   const [ownerOption, setOwnerOption] = useState(null);
+  // Whether the container being edited shows up in the storefront's browse
+  // section. In state because it is a switch, and the form has to re-render
+  // when it is flipped.
+  const [browsable, setBrowsable] = useState(true);
+  // The create form's type, in state rather than on a ref: an edition box
+  // needs a set picked too, so the form has to re-render when the type
+  // changes.
+  const [newType, setNewType] = useState("binder");
+  // Every paper set, for that picker. Fetched once, and only when an edition
+  // box is actually being created — it is a long list nothing else needs.
+  const [sets, setSets] = useState([]);
+  const [setOption, setSetOption] = useState(null);
 
   const nameRef = useRef(null);
-  const typeRef = useRef(null);
 
   const navigate = useNavigate();
 
@@ -136,6 +150,19 @@ export default function Storage() {
     );
   }, []);
 
+  // The set roster, fetched the first time an edition box is being created:
+  // it is every paper set ever printed, and no other form needs it.
+  useEffect(() => {
+    if (newType !== "edition_box" || sets.length) return;
+    accessAPI(
+      "GET",
+      "card/sets",
+      null,
+      (response) => setSets(response ?? []),
+      () => setSets([])
+    );
+  }, [newType, sets.length]);
+
   // Seed the owner autocomplete when the edit form opens: the container's
   // current owner, or the shop. (Matched to the roster option by id, so the
   // name-only seed still highlights the right customer once picked.)
@@ -146,6 +173,15 @@ export default function Storage() {
         ? { id: panel.unit.owner.id, label: panel.unit.owner.name }
         : { id: "shop", label: texts.STORAGE_OWNER_SHOP }
     );
+    setBrowsable(panel.unit.browsable !== false);
+  }, [panel]);
+
+  // A fresh create form every time: the last type picked should not decide
+  // the next container, and a leftover set would silently attach itself.
+  useEffect(() => {
+    if (panel?.mode !== "create") return;
+    setNewType("binder");
+    setSetOption(null);
   }, [panel]);
 
   function toggleSort(column) {
@@ -163,10 +199,17 @@ export default function Storage() {
     e.preventDefault();
     const name = nameRef.current.value.trim();
     if (!name) return;
+    // An edition box is the set it holds, so it cannot be created without
+    // one. The API refuses it too; this just keeps the form from asking.
+    if (newType === "edition_box" && !setOption) return;
     accessAPI(
       "POST",
       "storage",
-      { name, type: typeRef.current.value },
+      {
+        name,
+        type: newType,
+        ...(newType === "edition_box" ? { cardset: setOption.id } : {}),
+      },
       () => {
         setPanel(null);
         load();
@@ -187,7 +230,11 @@ export default function Storage() {
     accessAPI(
       "PUT",
       `storage/${panel.unit.id}`,
-      { name, owner: owner === "shop" ? null : parseInt(owner, 10) },
+      {
+        name,
+        owner: owner === "shop" ? null : parseInt(owner, 10),
+        browsable,
+      },
       () => {
         setPanel(null);
         load();
@@ -331,6 +378,16 @@ export default function Storage() {
                       sx={{ ml: 1 }}
                     >
                       {TYPE_LABELS[unit.type]}
+                      {/* Which set, for a box that is one — two identically
+                          named edition boxes are otherwise indistinguishable
+                          from the list. */}
+                      {unit.cardsetname ? ` · ${unit.cardsetname}` : ""}
+                      {/* Said on the row rather than only in the edit form:
+                          "why is this binder not in the shop?" should be
+                          answerable without opening anything. */}
+                      {unit.browsable === false
+                        ? ` · ${texts.STORAGE_NOT_BROWSABLE}`
+                        : ""}
                     </Typography>
                   </TableCell>
                   <TableCell sx={{ width: 220 }}>
@@ -468,14 +525,41 @@ export default function Storage() {
               />
               <TextField select SelectProps={{ native: true }}
                 label={texts.STORAGE_TYPE}
-                inputRef={typeRef}
-                defaultValue="binder"
+                value={newType}
+                onChange={(e) => setNewType(e.target.value)}
               >
                 <option value="binder">{texts.BINDER}</option>
                 <option value="sorted_box">{texts.SORTED_BOX}</option>
                 <option value="unsorted_box">{texts.UNSORTED_BOX}</option>
+                <option value="edition_box">{texts.EDITION_BOX}</option>
               </TextField>
-              <Button type="submit">{texts.CREATE}</Button>
+              {/* An edition box IS a set, so it is picked here and never
+                  again — the field only exists for this one type. */}
+              {newType === "edition_box" && (
+                <Autocomplete
+                  options={sets.map((set) => ({
+                    id: set.cardset,
+                    label: `${set.cardsetname} (${set.cardset.toUpperCase()})`,
+                  }))}
+                  value={setOption}
+                  onChange={(e, value) => setSetOption(value)}
+                  isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                  getOptionLabel={(opt) => opt.label ?? ""}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label={texts.EDITION_SET}
+                      helperText={texts.EDITION_SET_HINT}
+                    />
+                  )}
+                />
+              )}
+              <Button
+                type="submit"
+                disabled={newType === "edition_box" && !setOption}
+              >
+                {texts.CREATE}
+              </Button>
             </Stack>
           </form>
         )}
@@ -512,6 +596,20 @@ export default function Storage() {
                   />
                 )}
               />
+              {/* About the CONTAINER, not its cards: turning it off hides the
+                  binder from the browse shelf and takes nothing off sale. */}
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={browsable}
+                    onChange={(e) => setBrowsable(e.target.checked)}
+                  />
+                }
+                label={texts.STORAGE_BROWSABLE}
+              />
+              <Typography variant="caption" color="text.secondary">
+                {texts.STORAGE_BROWSABLE_HINT}
+              </Typography>
               <Button type="submit">{texts.SAVE}</Button>
             </Stack>
           </form>

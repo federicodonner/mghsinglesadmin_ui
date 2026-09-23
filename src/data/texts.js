@@ -119,6 +119,27 @@ const texts = {
   BINDER: "Carpeta",
   SORTED_BOX: "Caja ordenada",
   UNSORTED_BOX: "Caja sin ordenar",
+  EDITION_BOX: "Caja de edición",
+  // The set checklist: an edition box is the set printed out, with a quantity
+  // beside every card.
+  EDITION_SET: "Edición",
+  EDITION_SET_HINT:
+    "La edición no se puede cambiar después: la caja ES esa edición.",
+  EDITION_SEARCH: "Buscar por nombre o número",
+  EDITION_NO_MATCHES: "Ninguna carta coincide con la búsqueda.",
+  EDITION_EMPTY_SET: "Esta edición no tiene cartas en papel.",
+  EDITION_ONLY_HELD: "Mostrar sólo las que tengo",
+  EDITION_PROGRESS_1: " de ",
+  EDITION_PROGRESS_2: " casilleros con al menos una copia",
+  EDITION_COL_NUMBER: "N°",
+  EDITION_COL_CARD: "Carta",
+  EDITION_COL_FINISH: "Terminación",
+  EDITION_COL_QUANTITY: "Cantidad",
+  EDITION_BAGGED_1: "+",
+  EDITION_BAGGED_2: " apartada(s) para un pedido",
+  EDITION_SAVE_FAILED: "No se pudo guardar la cantidad.",
+  EDITION_LOCKED:
+    "Las cartas de una caja de edición se cargan con la cantidad de cada una.",
   NEW_STORAGE: "Nuevo contenedor",
   EDIT_STORAGE: "Editar contenedor",
   STORAGE_NAME: "Nombre",
@@ -127,6 +148,12 @@ const texts = {
   STORAGE_OWNER_SHOP: "La tienda",
   STORAGE_OWNER_HINT:
     "Cambiar el dueño mueve las cartas del contenedor a su colección.",
+  // Whether shoppers can leaf through the container in the storefront. About
+  // the CONTAINER, never about whether its cards sell.
+  STORAGE_BROWSABLE: "Explorable en la tienda",
+  STORAGE_BROWSABLE_HINT:
+    "Si está apagado, el contenedor no aparece para explorar en la tienda. Sus cartas se siguen vendiendo y apareciendo en las búsquedas.",
+  STORAGE_NOT_BROWSABLE: "No explorable",
   SHOP: "Tienda",
   IN_SHOP: "En la tienda",
   WITH_CUSTOMER: "Con el cliente",

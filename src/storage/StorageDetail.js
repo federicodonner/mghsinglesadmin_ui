@@ -18,12 +18,14 @@ import texts from "../data/texts";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import BinderEditor from "./BinderEditor";
 import BoxEditor from "./BoxEditor";
+import EditionEditor from "./EditionEditor";
 import { withDuplicate, withoutPlacement } from "./optimistic";
 
 const TYPE_LABELS = {
   binder: texts.BINDER,
   sorted_box: texts.SORTED_BOX,
   unsorted_box: texts.UNSORTED_BOX,
+  edition_box: texts.EDITION_BOX,
 };
 
 const STATE_LABELS = {
@@ -228,6 +230,9 @@ export default function StorageDetail() {
     );
 
   const standbyCount = unit?.standby?.length ?? 0;
+  // An edition box is edited as a checklist of quantities, so it shares none
+  // of the add / import / arrange controls the other containers have.
+  const isEdition = unit?.type === "edition_box";
 
   // Leaving with cards still in stand-by throws them away — a card with nowhere
   // to live is exactly what this model does not allow. Warned about first,
@@ -268,6 +273,9 @@ export default function StorageDetail() {
               subtitle={`${unit.cardcount} ${texts.CARDS}`}
               tags={[
                 TYPE_LABELS[unit.type],
+                // An edition box is only ever one set; saying which is more
+                // use on this page than saying it again in the title.
+                ...(unit.cardsetname ? [unit.cardsetname] : []),
                 unit.owner ? unit.owner.name : texts.SHOP,
                 {
                   label: STATE_LABELS[unit.state],
@@ -277,8 +285,10 @@ export default function StorageDetail() {
               buttons={
                 // Adding follows physical possession, like arranging: a
                 // customer walking in with more cards for their consigned
-                // binder hands them over the counter.
-                unit.arrangeable
+                // binder hands them over the counter. An edition box has
+                // neither button: its checklist is how cards go in and out,
+                // and a CSV would carry cards from other sets.
+                unit.arrangeable && !isEdition
                   ? [
                       { label: texts.ADD_CARD, onClick: () => setAdding(true) },
                       {
@@ -322,13 +332,21 @@ export default function StorageDetail() {
                 {texts.STORAGE_LOCKED}
               </Alert>
             )}
-            {unit.arrangeable && !unit.editable && (
+            {unit.arrangeable && !unit.editable && !isEdition && (
               <Alert severity="info" sx={{ mb: 2 }}>
                 {texts.STORAGE_ARRANGE_ONLY}
               </Alert>
             )}
 
-            {unit.type === "binder" ? (
+            {isEdition ? (
+              <EditionEditor
+                unit={unit}
+                editable={unit.editable}
+                // The header above shows the container's card count, and a
+                // quantity change moves it.
+                onChanged={load}
+              />
+            ) : unit.type === "binder" ? (
               <BinderEditor
                 unit={unit}
                 arrange={unit.arrangeable}

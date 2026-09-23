@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { toast } from "../utils/toast";
 import { confirmDialog } from "../utils/confirm";
 import texts from "../data/texts";
+// The shared "where the card is" line — a private copy here used to
+// drift, and had no case for an edition box at all.
+import { locationLabel } from "../utils/locationLabel";
 import PreviewCarta from "../elementos/PreviewCarta";
 import { accessAPI } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
@@ -65,19 +68,6 @@ export default function MatchQueue({ onLoaded }) {
       () => load(),
       (response) => toast(response.message)
     );
-  }
-
-  // One line of "where the card is", in the terms that container supports.
-  function locationLabel(location) {
-    if (location.storagetype === "binder") {
-      return `${location.storagename} — ${texts.PAGE} ${location.page}, ${texts.IN_POCKET} ${location.pocket}${
-        location.depth > 1 ? ` (${texts.DEPTH} ${location.depth})` : ""
-      }`;
-    }
-    if (location.storagetype === "sorted_box") {
-      return `${location.storagename} — ${texts.POSITION_IN_BOX} ${location.sequence}`;
-    }
-    return location.storagename;
   }
 
   // Rows that answer the SAME wish, kept together: they are alternatives, not

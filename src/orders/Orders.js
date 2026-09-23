@@ -5,6 +5,9 @@ import Header from "../header/Header";
 import Loader from "../loader/Loader";
 import { useNavigate } from "react-router-dom";
 import texts from "../data/texts";
+// The shared "where the card is" line — a private copy here used to
+// drift, and had no case for an edition box at all.
+import { locationLabel } from "../utils/locationLabel";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
 import {
@@ -82,19 +85,6 @@ export default function Orders() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // One line of "where the card is", in the terms that container supports.
-  function locationLabel(location) {
-    if (location.storagetype === "binder") {
-      return `${location.storagename} — ${texts.PAGE} ${location.page}, ${texts.IN_POCKET} ${location.pocket}${
-        location.depth > 1 ? ` (${texts.DEPTH} ${location.depth})` : ""
-      }`;
-    }
-    if (location.storagetype === "sorted_box") {
-      return `${location.storagename} — ${texts.POSITION_IN_BOX} ${location.sequence}`;
-    }
-    return location.storagename;
-  }
 
   async function act(order, action, confirmText, body) {
     if (confirmText && !(await confirmDialog(confirmText))) return;
