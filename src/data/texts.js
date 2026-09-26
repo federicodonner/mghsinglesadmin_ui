@@ -137,6 +137,17 @@ const texts = {
   EDITION_COL_QUANTITY: "Cantidad",
   EDITION_BAGGED_1: "+",
   EDITION_BAGGED_2: " apartada(s) para un pedido",
+  EDITION_IMPORT_REPORT_TITLE: "Importación terminada",
+  EDITION_IMPORT_REPORT_INTRO:
+    ". Estas cartas no se pudieron importar:",
+  EDITION_IMPORT_REPORT_CLOSE: "Entendido",
+  EDITION_IMPORT_LINE: "Fila ",
+  EDITION_IMPORT_REASONS: {
+    not_in_edition: "No pertenece a la edición de esta caja.",
+    quantity_too_high:
+      "Superaría el máximo de copias por carta de una caja de edición.",
+    no_name: "La fila no tiene nombre de carta.",
+  },
   EDITION_SAVE_FAILED: "No se pudo guardar la cantidad.",
   EDITION_LOCKED:
     "Las cartas de una caja de edición se cargan con la cantidad de cada una.",

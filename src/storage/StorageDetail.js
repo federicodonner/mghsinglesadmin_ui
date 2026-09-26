@@ -9,6 +9,9 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
 import Header from "../header/Header";
 import Title from "../elementos/Title";
 import SideForm from "../elementos/SideForm";
@@ -60,6 +63,12 @@ export default function StorageDetail() {
   // a full binder takes a few seconds, and a page that says nothing reads
   // as a click that did nothing.
   const [importing, setImporting] = useState(false);
+  // An edition box's import reports, once it finishes, the cards it could
+  // not file and why — a list, not a count, because each one is a card the
+  // shop has to deal with by hand.
+  const [importReport, setImportReport] = useState(null);
+  // Bumped after an edition import so the checklist re-reads its quantities.
+  const [editionVersion, setEditionVersion] = useState(0);
 
   // Read the picked CSV and hand it to the API, which maps rows to pockets
   // (empty lines skip one) and keeps the scan's condition and language.
@@ -75,6 +84,16 @@ export default function StorageDetail() {
       { csv },
       (result) => {
         setImporting(false);
+        if (unit.type === "edition_box") {
+          setEditionVersion((v) => v + 1);
+          load();
+          if (result.errors.length > 0) {
+            setImportReport(result);
+          } else {
+            toast(`${result.added}${texts.IMPORT_DONE_CARDS}`, "success");
+          }
+          return;
+        }
         let message = `${result.added}${texts.IMPORT_DONE_CARDS}`;
         if (result.skipped > 0)
           message += ` · ${result.skipped}${texts.IMPORT_SKIPPED}`;
@@ -285,10 +304,21 @@ export default function StorageDetail() {
               buttons={
                 // Adding follows physical possession, like arranging: a
                 // customer walking in with more cards for their consigned
-                // binder hands them over the counter. An edition box has
-                // neither button: its checklist is how cards go in and out,
-                // and a CSV would carry cards from other sets.
-                unit.arrangeable && !isEdition
+                // binder hands them over the counter. An edition box has no
+                // per-card add — its checklist is how cards go in and out —
+                // but it does import, once its set is known: the file is
+                // read by card name only and filed into that set.
+                isEdition
+                  ? unit.editable && unit.cardsetcode
+                    ? [
+                        {
+                          label: texts.IMPORT_COLLECTION,
+                          onClick: () =>
+                            !importing && importRef.current?.click(),
+                        },
+                      ]
+                    : []
+                  : unit.arrangeable
                   ? [
                       { label: texts.ADD_CARD, onClick: () => setAdding(true) },
                       {
@@ -342,6 +372,7 @@ export default function StorageDetail() {
               <EditionEditor
                 unit={unit}
                 editable={unit.editable}
+                reloadKey={editionVersion}
                 // The header above shows the container's card count, and a
                 // quantity change moves it.
                 onChanged={load}
@@ -416,6 +447,43 @@ export default function StorageDetail() {
           />
         </SideForm>
       )}
+
+      <Dialog
+        open={Boolean(importReport)}
+        onClose={() => setImportReport(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{texts.EDITION_IMPORT_REPORT_TITLE}</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 1.5 }}>
+            {importReport?.added ?? 0}
+            {texts.IMPORT_DONE_CARDS}
+            {texts.EDITION_IMPORT_REPORT_INTRO}
+          </DialogContentText>
+          <List dense disablePadding>
+            {importReport?.errors.map((error, index) => (
+              <ListItem key={index} disableGutters>
+                <ListItemText
+                  primary={
+                    error.name
+                      ? `${error.quantity ? `${error.quantity}x ` : ""}${error.name}`
+                      : `${texts.EDITION_IMPORT_LINE}${error.line}`
+                  }
+                  secondary={
+                    texts.EDITION_IMPORT_REASONS[error.reason] ?? error.reason
+                  }
+                />
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button variant="outlined" onClick={() => setImportReport(null)}>
+            {texts.EDITION_IMPORT_REPORT_CLOSE}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={leaving} onClose={() => setLeaving(false)}>
         <DialogTitle>{texts.STANDBY_DISCARD_TITLE}</DialogTitle>

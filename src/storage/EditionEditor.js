@@ -131,7 +131,9 @@ function Quantity({ row, max, disabled, onSave }) {
 // The checklist comes from its own endpoint rather than from the container
 // read: "what is in this box" and "what could be in this box" are different
 // questions, and only this page asks the second one.
-export default function EditionEditor({ unit, editable, onChanged }) {
+// `reloadKey` changes when the box was filled from outside this editor (an
+// import), so the checklist re-reads its quantities without losing the search.
+export default function EditionEditor({ unit, editable, onChanged, reloadKey }) {
   const [edition, setEdition] = useState(null);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -156,7 +158,7 @@ export default function EditionEditor({ unit, editable, onChanged }) {
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [load, reloadKey]);
 
   // Save one line's quantity. The row on screen is already showing the new
   // number (see Quantity), so success only has to reconcile the totals; a
