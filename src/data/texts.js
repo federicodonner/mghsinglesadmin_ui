@@ -375,6 +375,7 @@ const texts = {
   ADD_PAGE: "Añadir página",
   PREV_PAGES: "Páginas anteriores",
   NEXT_PAGES: "Páginas siguientes",
+  GO_TO_PAGE: "Ir a página",
   REMOVE_FROM_CONTAINER: "Sacar",
   FILTER_BY_SET: "Filtrar por edición (nombre o código)",
   FILTER_BY_SET_SHORT: "Edición",

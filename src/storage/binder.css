@@ -6,10 +6,19 @@
   flex-wrap: wrap;
 }
 
+/* The open binder and its page controls underneath. The controls used to
+   flank the pages as ‹ › arrows; moved below, that width goes to the pages. */
+.binderMain {
+  flex: 1 1 560px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .binderPages {
   display: flex;
   gap: 16px;
-  flex: 1 1 560px;
   flex-wrap: wrap;
 }
 
@@ -18,11 +27,34 @@
   min-width: 240px;
 }
 
-.pageNav {
-  align-self: center;
-  font-size: 28px;
-  width: 40px;
-  height: 40px;
+/* Full width under the pages: ‹ at the left edge, the numbers spread across
+   the middle, › and the jump box at the right. */
+.binderNav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.binderNavPages {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.binderNavPages .MuiPagination-ul {
+  justify-content: space-evenly;
+  flex-wrap: nowrap;
+}
+
+.binderNav > .MuiIconButton-root {
+  font-size: 22px;
+  width: 32px;
+  height: 32px;
+  line-height: 1;
+}
+
+.binderNavJump {
+  width: 132px;
+  margin-left: 8px !important;
 }
 
 /* Spread 0: the slot page 1 faces — the inside of the cover, not a page. */
@@ -216,22 +248,11 @@
     display: none;
   }
 
-  /* One page at a time, flanked by the ‹ › arrows on a single row — two facing
-     pages do not fit on a phone. The page shrinks to share the row with the
-     arrows instead of wrapping below them. */
-  .binderPages {
-    flex-wrap: nowrap;
-    gap: 4px;
-    align-items: center;
-  }
-
+  /* One page at a time — two facing pages do not fit on a phone — using the
+     full width now that the controls sit underneath. */
   .binderPage {
     flex: 1 1 auto;
     min-width: 0;
-  }
-
-  .pageNav {
-    flex: 0 0 auto;
   }
 
   /* Wrapped below the pages, the stand-by box keeps its 260px width; centre it

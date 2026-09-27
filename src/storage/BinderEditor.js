@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -15,7 +15,10 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
+import Pagination from "@mui/material/Pagination";
+import PaginationItem from "@mui/material/PaginationItem";
 import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import texts from "../data/texts";
@@ -218,6 +221,41 @@ export default function BinderEditor({
     else setSpread(spread - 1);
   }
 
+  // Open the binder straight at page `n` — the spread holding it, or the page
+  // itself on a phone. Only real pages: jumping never adds paper, that is
+  // still the › button's job at the end.
+  function goToPage(n) {
+    const page = Math.min(Math.max(n, 1), lastPage);
+    if (isMobile) setMobilePage(page);
+    else setSpread(spreadForPage(page));
+  }
+  const [jumpTo, setJumpTo] = useState("");
+
+  // The page bar spans the binder's full width, and the numbers fill it: as
+  // many page buttons as fit, instead of MUI's fixed handful around the
+  // current one. Measured, because the width depends on the stand-by column
+  // wrapping or not, not only on the window.
+  const navRef = useRef(null);
+  const [navWidth, setNavWidth] = useState(0);
+  useEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) =>
+      setNavWidth(entry.contentRect.width)
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  // MUI shows first + last + two ellipses + the current page with
+  // `siblingCount` on each side: 5 + 2s buttons. A spread's "10–11" is wider
+  // than a phone's single number. The rest of the bar is the two arrows and
+  // the jump box.
+  const buttonWidth = isMobile ? 36 : 56;
+  const siblingCount = Math.max(
+    0,
+    Math.floor(((navWidth - 220) / buttonWidth - 5) / 2)
+  );
+
   const findCard = (placementid) => {
     for (const page of rawPages) {
       for (const pocket of page.pockets) {
@@ -317,81 +355,133 @@ export default function BinderEditor({
       onDragCancel={() => setActiveCard(null)}
     >
       <Box className="binderLayout">
-        <Box className="binderPages">
-          <IconButton
-            className="pageNav"
-            disabled={isMobile ? curMobilePage <= 1 : spread === 0}
-            onClick={turnBack}
-            title={texts.PREV_PAGES}
-          >
-            ‹
-          </IconButton>
-          {visiblePages.map((page, i) =>
-            page === null ? (
-              // Spread 0: page 1 has nothing facing it, like the inside of the
-              // binder's cover.
-              <Box className="binderPage pageBlank" key={`blank-${i}`} />
-            ) : (
-              <Box className="binderPage" key={page.page}>
-                <Typography variant="caption" className="binderPageLabel">
-                  {texts.PAGE} {page.page}
-                </Typography>
-                <Box className="binderGrid">
-                  {page.pockets.map((pocket) => (
-                    <Pocket
-                      key={pocket.pocket}
-                      page={page.page}
-                      pocket={pocket.pocket}
-                      cards={pocket.cards}
-                      disabled={!arrange}
-                      // While the shop holds the binder, opening a pocket is
-                      // how a single card gets asked for — so every occupied
-                      // pocket opens, not only stacks.
-                      expandAny={withdrawable}
-                      expanded={
-                        expanded?.page === page.page &&
-                        expanded?.pocket === pocket.pocket
-                      }
-                      onExpand={() => {
-                        setStackOrder(null);
-                        setExpanded({ page: page.page, pocket: pocket.pocket });
-                      }}
-                      onShift={
-                        arrange && onShiftPage
-                          ? (direction) =>
-                              onShiftPage(page.page, pocket.pocket, direction)
-                          : null
-                      }
-                      onEditVersion={
-                        onEditVersion && pocket.cards.length === 1
-                          ? () => onEditVersion(pocket.cards[0])
-                          : null
-                      }
-                      // Same gate as the pen: a stack's cards are duplicated
-                      // from its dialog, where each copy can be told apart.
-                      onDuplicate={
-                        mutate && onDuplicate && pocket.cards.length === 1
-                          ? () => onDuplicate(pocket.cards[0].placementid)
-                          : null
-                      }
-                    />
-                  ))}
+        <Box className="binderMain">
+          <Box className="binderPages">
+            {visiblePages.map((page, i) =>
+              page === null ? (
+                // Spread 0: page 1 has nothing facing it, like the inside of the
+                // binder's cover.
+                <Box className="binderPage pageBlank" key={`blank-${i}`} />
+              ) : (
+                <Box className="binderPage" key={page.page}>
+                  <Typography variant="caption" className="binderPageLabel">
+                    {texts.PAGE} {page.page}
+                  </Typography>
+                  <Box className="binderGrid">
+                    {page.pockets.map((pocket) => (
+                      <Pocket
+                        key={pocket.pocket}
+                        page={page.page}
+                        pocket={pocket.pocket}
+                        cards={pocket.cards}
+                        disabled={!arrange}
+                        // While the shop holds the binder, opening a pocket is
+                        // how a single card gets asked for — so every occupied
+                        // pocket opens, not only stacks.
+                        expandAny={withdrawable}
+                        expanded={
+                          expanded?.page === page.page &&
+                          expanded?.pocket === pocket.pocket
+                        }
+                        onExpand={() => {
+                          setStackOrder(null);
+                          setExpanded({ page: page.page, pocket: pocket.pocket });
+                        }}
+                        onShift={
+                          arrange && onShiftPage
+                            ? (direction) =>
+                                onShiftPage(page.page, pocket.pocket, direction)
+                            : null
+                        }
+                        onEditVersion={
+                          onEditVersion && pocket.cards.length === 1
+                            ? () => onEditVersion(pocket.cards[0])
+                            : null
+                        }
+                        // Same gate as the pen: a stack's cards are duplicated
+                        // from its dialog, where each copy can be told apart.
+                        onDuplicate={
+                          mutate && onDuplicate && pocket.cards.length === 1
+                            ? () => onDuplicate(pocket.cards[0].placementid)
+                            : null
+                        }
+                      />
+                    ))}
+                  </Box>
                 </Box>
-              </Box>
-            )
-          )}
-          <IconButton
-            className="pageNav"
-            disabled={(isMobile ? atLastMobile : atLast) && !arrange}
-            onClick={turnForward}
-            title={
-              (isMobile ? atLastMobile : atLast)
-                ? texts.ADD_PAGE
-                : texts.NEXT_PAGES
-            }
-          >
-            ›
-          </IconButton>
+              )
+            )}
+          </Box>
+
+          {/* Page controls under the binder: ‹ › turn one step, the numbers
+              jump straight to a spread (a single page on a phone), and the box
+              opens any page by number. The › stays custom rather than MUI's own
+              because past the last page it adds paper for whoever may arrange. */}
+          <Box className="binderNav" ref={navRef}>
+            <IconButton
+              size="small"
+              disabled={isMobile ? curMobilePage <= 1 : spread === 0}
+              onClick={turnBack}
+              title={texts.PREV_PAGES}
+            >
+              ‹
+            </IconButton>
+            <Pagination
+              size="small"
+              hidePrevButton
+              hideNextButton
+              className="binderNavPages"
+              color="primary"
+              siblingCount={siblingCount}
+              count={isMobile ? lastPage : lastSpread + 1}
+              page={isMobile ? curMobilePage : spread + 1}
+              onChange={(_, value) =>
+                isMobile ? setMobilePage(value) : setSpread(value - 1)
+              }
+              renderItem={(item) => (
+                <PaginationItem
+                  {...item}
+                  // A spread shows two pages, so its button says which: "2–3".
+                  page={
+                    !isMobile && item.type === "page"
+                      ? pagesInSpread(item.page - 1)
+                          .filter(Boolean)
+                          .join("–")
+                      : item.page
+                  }
+                />
+              )}
+            />
+            <IconButton
+              size="small"
+              disabled={(isMobile ? atLastMobile : atLast) && !arrange}
+              onClick={turnForward}
+              title={
+                (isMobile ? atLastMobile : atLast)
+                  ? texts.ADD_PAGE
+                  : texts.NEXT_PAGES
+              }
+            >
+              {(isMobile ? atLastMobile : atLast) && arrange ? "+" : "›"}
+            </IconButton>
+            <TextField
+              size="small"
+              type="number"
+              className="binderNavJump"
+              placeholder={texts.GO_TO_PAGE}
+              value={jumpTo}
+              onChange={(e) => setJumpTo(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                const n = parseInt(jumpTo, 10);
+                if (n) goToPage(n);
+                setJumpTo("");
+              }}
+              slotProps={{
+                htmlInput: { min: 1, max: lastPage, "aria-label": texts.GO_TO_PAGE },
+              }}
+            />
+          </Box>
         </Box>
 
         <StandbyZone cards={standby} disabled={!arrange}>
