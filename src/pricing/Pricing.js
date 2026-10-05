@@ -31,6 +31,8 @@ export default function Pricing() {
   const [loader, setLoader] = useState(true);
   // Every stock row whose price is fixed by hand.
   const [fixed, setFixed] = useState([]);
+  const [conditions, setConditions] = useState([]);
+  const [savingMultipliers, setSavingMultipliers] = useState(false);
   // Whether the fix-a-price sidebar is slid out.
   const [adding, setAdding] = useState(false);
   // The pesos-per-dollar rate, as typed. Empty string while none is set.
@@ -38,6 +40,32 @@ export default function Pricing() {
   const [savingRate, setSavingRate] = useState(false);
 
   const navigate = useNavigate();
+
+  function setMultiplier(id, field, value) {
+    setConditions((current) =>
+      current.map((condition) =>
+        condition.id === id ? { ...condition, [field]: value } : condition
+      )
+    );
+  }
+
+  function saveMultipliers() {
+    setSavingMultipliers(true);
+    accessAPI(
+      "PUT",
+      "admin/condition",
+      { conditions },
+      () => {
+        setSavingMultipliers(false);
+        toast(texts.PRICES_UPDATED, "success");
+        loadFixed();
+      },
+      (response) => {
+        setSavingMultipliers(false);
+        toast(response.message);
+      }
+    );
+  }
 
   function loadFixed() {
     accessAPI(
@@ -51,13 +79,15 @@ export default function Pricing() {
 
   useEffect(() => {
     // Owner gate doubling as the page loader: staff get a 403 here and are
-    // sent back to login. The response itself is unused since the multiplier
-    // table left the page — every card now prices as NM.
+    // sent back to login.
     accessAPI(
       "GET",
       "admin/condition",
       null,
-      () => setLoader(false),
+      (response) => {
+        setConditions(response ?? []);
+        setLoader(false);
+      },
       (response) => {
         toast(response.message);
         logout();
@@ -206,11 +236,45 @@ export default function Pricing() {
             </Typography>
           )}
 
-          {/* The per-condition multiplier table lived here until 2026-08-23,
-              when the shop stopped tracking condition in the UI: every card
-              now prices as NM, so a grid of multipliers that no longer apply
-              would only mislead. The endpoint and columns survive for the day
-              condition comes back. */}
+          <Divider sx={{ my: 4 }} />
+
+          {/* What each condition is worth next to the near-mint reference.
+              Saving reprices the stock at once. */}
+          <Title title={texts.MULTIPLIERS_TITLE} subtitle={texts.MULTIPLIERS_HINT} />
+          <div className="multiplierTable">
+            <div className="multiplierRow head">
+              <span className="multName" />
+              <span>{texts.MULT_SELL}</span>
+              <span>{texts.MULT_BUY}</span>
+            </div>
+            {conditions.map((condition) => (
+              <div className="multiplierRow" key={condition.id}>
+                <span className="multName">{condition.name}</span>
+                <TextField
+                  type="number"
+                  size="small"
+                  inputProps={{ step: 0.01, min: 0, max: 1 }}
+                  value={condition.sellmultiplier}
+                  onChange={(e) =>
+                    setMultiplier(condition.id, "sellmultiplier", e.target.value)
+                  }
+                />
+                <TextField
+                  type="number"
+                  size="small"
+                  inputProps={{ step: 0.01, min: 0, max: 1 }}
+                  value={condition.buymultiplier}
+                  onChange={(e) =>
+                    setMultiplier(condition.id, "buymultiplier", e.target.value)
+                  }
+                />
+              </div>
+            ))}
+          </div>
+          <Button onClick={saveMultipliers} disabled={savingMultipliers}>
+            {texts.SAVE_MULTIPLIERS}
+          </Button>
+
           <Divider sx={{ my: 4 }} />
 
           <Title

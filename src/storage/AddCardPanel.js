@@ -3,6 +3,7 @@ import { toast } from "../utils/toast";
 import "./addCard.css";
 import { accessAPI } from "../utils/fetchFunctions";
 import { finishesFor, finishLabel, isFoil, DEFAULT_FINISH } from "../utils/finishes";
+import { DEFAULT_CONDITION, DEFAULT_LANGUAGE } from "../utils/grade";
 import texts from "../data/texts";
 import PreviewCarta from "../elementos/PreviewCarta";
 import CatalogueSearch from "./CatalogueSearch";
@@ -23,8 +24,7 @@ const VERSIONS_PAGE = 60;
 // One printing, ready to add: its own finish choice, quantity and button, so
 // adding is a single click on the row itself — the confirmation dialog this
 // replaced made every add a two-step conversation. Condition and language are
-// not asked for (2026-08-23, the shop's call): a manual add is recorded as NM
-// English by the API.
+// chosen once for the whole panel (see AddCardPanel), not per row.
 //
 // The finish toggle only appears when the printing actually offers a choice.
 // Half of all printings exist in one finish; those state it (a chip when it
@@ -171,6 +171,45 @@ export default function AddCardPanel({
   const [setFilter, setSetFilter] = useState("");
   const [versionsLoading, setVersionsLoading] = useState(false);
 
+  // The grade the next add is filed with. Staff grade cards as they load
+  // them, and a stack being loaded usually shares one grade — so the choice
+  // sits on the panel and stays put from one add to the next. "" until the
+  // lists arrive means "let the API assume near-mint English".
+  const [conditions, setConditions] = useState([]);
+  const [languages, setLanguages] = useState([]);
+  const [conditionId, setConditionId] = useState("");
+  const [languageId, setLanguageId] = useState("");
+
+  useEffect(() => {
+    accessAPI(
+      "GET",
+      "card/modifiers",
+      null,
+      (response) => {
+        setConditions(response.conditions ?? []);
+        setLanguages(response.languages ?? []);
+      },
+      (response) => toast(response.message)
+    );
+  }, []);
+
+  // Adding starts on near-mint English; changing a copy starts on what that
+  // copy already is, so choosing a version alone leaves its grade untouched.
+  useEffect(() => {
+    if (!conditions.length || !languages.length) return;
+    const idOf = (rows, name, fallback) =>
+      (rows.find((row) => row.name === name) ??
+        rows.find((row) => row.name === fallback) ??
+        rows[0]).id;
+    setConditionId(idOf(conditions, changeTarget?.condition, DEFAULT_CONDITION));
+    setLanguageId(idOf(languages, changeTarget?.language, DEFAULT_LANGUAGE));
+  }, [conditions, languages, changeTarget]);
+
+  const grade = () => ({
+    ...(conditionId !== "" && { conditionid: conditionId }),
+    ...(languageId !== "" && { languageid: languageId }),
+  });
+
   // Change mode arms the search with the card being edited, every time a
   // different card is picked for editing.
   useEffect(() => {
@@ -276,6 +315,7 @@ export default function AddCardPanel({
       {
         scryfallid: version.scryfallid,
         variant,
+        ...grade(),
       },
       quantity,
       (ok) => {
@@ -311,6 +351,40 @@ export default function AddCardPanel({
           sx={{ width: 170, flex: "0 0 auto" }}
         />
       </Stack>
+      {/* The grade of what is being loaded (or, in change mode, of the copy
+          being edited). Only the back office has these two fields. */}
+      <Stack direction="row" spacing={1} sx={{ mt: 1, mb: 1 }}>
+        <TextField
+          select
+          SelectProps={{ native: true }}
+          id="conditionid"
+          label={texts.CONDITION}
+          value={conditionId}
+          onChange={(e) => setConditionId(parseInt(e.target.value, 10))}
+          sx={{ width: 170 }}
+        >
+          {conditions.map((condition) => (
+            <option key={condition.id} value={condition.id}>
+              {condition.name}
+            </option>
+          ))}
+        </TextField>
+        <TextField
+          select
+          SelectProps={{ native: true }}
+          id="languageid"
+          label={texts.LANGUAGE}
+          value={languageId}
+          onChange={(e) => setLanguageId(parseInt(e.target.value, 10))}
+          sx={{ width: 170 }}
+        >
+          {languages.map((language) => (
+            <option key={language.id} value={language.id}>
+              {language.name}
+            </option>
+          ))}
+        </TextField>
+      </Stack>
       {chosenName && (
         <>
           <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
@@ -329,7 +403,7 @@ export default function AddCardPanel({
               onAdd={
                 changeTarget
                   ? (picked, finish, quantity, done) =>
-                      onChangeVersion(picked, finish, done)
+                      onChangeVersion(picked, finish, done, grade())
                   : addVersion
               }
             />

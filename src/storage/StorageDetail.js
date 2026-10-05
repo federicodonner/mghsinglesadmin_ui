@@ -71,7 +71,7 @@ export default function StorageDetail() {
   const [editionVersion, setEditionVersion] = useState(0);
 
   // Read the picked CSV and hand it to the API, which maps rows to pockets
-  // (empty lines skip one) and keeps the scan's condition and language.
+  // (empty lines skip one) and keeps the file's condition and language.
   async function importCollection(e) {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -193,13 +193,14 @@ export default function StorageDetail() {
       onError
     );
 
-  // Swap ONE copy's printing/finish for the chosen one; the placement
-  // keeps its exact spot. Closes the change sidebar on success.
-  const changeVersion = (version, variant, done) =>
+  // Swap ONE copy's printing/finish — and its condition and language — for
+  // the chosen ones; the placement keeps its exact spot. Closes the change
+  // sidebar on success.
+  const changeVersion = (version, variant, done, grade = {}) =>
     accessAPI(
       "PUT",
       `storage/placement/${changing.placementid}/version`,
-      { scryfallid: version.scryfallid, variant },
+      { scryfallid: version.scryfallid, variant, ...grade },
       () => {
         done();
         setChanging(null);

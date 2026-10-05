@@ -8,6 +8,7 @@ import { locationLabel } from "../utils/locationLabel";
 import PreviewCarta from "../elementos/PreviewCarta";
 import { accessAPI } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
+import { gradeParts } from "../utils/grade";
 import { useExchangeRate, pesosLive } from "../utils/exchange";
 import "./orders.css";
 import Button from "@mui/material/Button";
@@ -142,6 +143,11 @@ export default function MatchQueue({ onLoaded }) {
                 <span className="lineSet">
                   {(match.cardsetcode ?? "").toUpperCase()}
                 </span>
+                {gradeParts(match).map((part) => (
+                  <span className="lineMeta" key={part}>
+                    {part}
+                  </span>
+                ))}
                 {isFoil(match.variant) && (
                   <span className="lineMeta">{finishLabel(match.variant)}</span>
                 )}

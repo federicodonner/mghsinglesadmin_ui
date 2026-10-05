@@ -22,6 +22,7 @@ import Typography from "@mui/material/Typography";
 import texts from "../data/texts";
 import PreviewCarta from "../elementos/PreviewCarta";
 import { isFoil, finishLabel } from "../utils/finishes";
+import { gradeParts } from "../utils/grade";
 import "./binder.css";
 
 // A box holds hundreds of copies, and a single endless list makes the page
@@ -76,6 +77,9 @@ function Row({ card, sortable, mutate, withdrawable, onDuplicate, onRemove, onWi
       <Typography variant="body2" color="text.secondary">
         {card.cardsetname}
       </Typography>
+      {gradeParts(card).map((part) => (
+        <Chip key={part} size="small" variant="outlined" label={part} />
+      ))}
       {isFoil(card.variant) && (
         <Chip size="small" color="secondary" label={finishLabel(card.variant)} />
       )}

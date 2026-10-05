@@ -10,6 +10,7 @@ import "./sell.css";
 import "../orders/orders.css";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
+import { gradeParts } from "../utils/grade";
 import { locationLabel } from "../utils/locationLabel";
 import { useExchangeRate, pesosLive, pesosFrozen, formatPesos } from "../utils/exchange";
 import texts from "../data/texts";
@@ -199,6 +200,11 @@ export default function Sell() {
                     <span className="lineSet">
                       {(card.cardsetcode ?? "").toUpperCase()}
                     </span>
+                    {gradeParts(card).map((part) => (
+                      <span className="lineMeta" key={part}>
+                        {part}
+                      </span>
+                    ))}
                     {isFoil(card.variant) && (
                       <span className="lineMeta">
                         {finishLabel(card.variant)}
@@ -248,6 +254,11 @@ export default function Sell() {
                       <span className="lineSet">
                         {(line.cardsetcode ?? "").toUpperCase()}
                       </span>
+                      {gradeParts(line).map((part) => (
+                        <span className="lineMeta" key={part}>
+                          {part}
+                        </span>
+                      ))}
                       {isFoil(line.variant) && (
                         <span className="lineMeta">
                           {finishLabel(line.variant)}

@@ -279,6 +279,20 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
+/* Condition/language of a copy that is not near-mint English, one row above
+   the foil tag. */
+.binderCard .gradeTag {
+  position: absolute;
+  bottom: 26px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  height: 18px;
+  font-size: 11px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
 /* The page-shift arrows: revealed by hovering an occupied pocket, floating
    at the top of the card with the same glow treatment as the stand-by
    actions so they read on any artwork. */

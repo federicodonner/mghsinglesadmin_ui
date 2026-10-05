@@ -6,6 +6,7 @@ import Typography from "@mui/material/Typography";
 import texts from "../data/texts";
 import Chip from "@mui/material/Chip";
 import { isFoil, finishLabel } from "../utils/finishes";
+import { gradeLabel } from "../utils/grade";
 
 // The draggable pieces of the binder editor.
 //
@@ -58,6 +59,10 @@ export function DraggableCard({ card, disabled, onClick, dimmed }) {
           label={finishLabel(card.variant)}
           className="foilTag"
         />
+      )}
+      {/* A copy that is not near-mint English says so, above the foil tag. */}
+      {gradeLabel(card) && (
+        <Chip size="small" label={gradeLabel(card)} className="gradeTag" />
       )}
     </Box>
   );

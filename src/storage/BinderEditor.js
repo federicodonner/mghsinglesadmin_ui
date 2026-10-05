@@ -24,6 +24,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import texts from "../data/texts";
 import PreviewCarta from "../elementos/PreviewCarta";
 import { isFoil, finishLabel } from "../utils/finishes";
+import { gradeParts } from "../utils/grade";
 import { DraggableCard, Pocket, StandbyZone } from "./BinderPieces";
 import "./binder.css";
 
@@ -598,6 +599,9 @@ export default function BinderEditor({
                     label={finishLabel(card.variant)}
                   />
                 )}
+                {gradeParts(card).map((part) => (
+                  <Chip key={part} size="small" variant="outlined" label={part} />
+                ))}
                 <Typography variant="caption" color="text.secondary">
                   {card.cardsetname}
                 </Typography>

@@ -10,6 +10,7 @@ import texts from "../data/texts";
 import { locationLabel } from "../utils/locationLabel";
 import { accessAPI, logout } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
+import { gradeParts } from "../utils/grade";
 import {
   useExchangeRate,
   formatPesos,
@@ -244,6 +245,11 @@ export default function Orders() {
                     <span className="lineSet">
                       {(line.cardsetcode ?? "").toUpperCase()}
                     </span>
+                    {gradeParts(line).map((part) => (
+                      <span className="lineMeta" key={part}>
+                        {part}
+                      </span>
+                    ))}
                     {isFoil(line.variant) && (
                       <span className="lineMeta">{finishLabel(line.variant)}</span>
                     )}
