@@ -352,7 +352,7 @@ export default function AddCardPanel({
         />
       </Stack>
       {/* The grade of what is being loaded (or, in change mode, of the copy
-          being edited). Only the back office has these two fields. */}
+          being edited). The customer app's add panel has the same two. */}
       <Stack direction="row" spacing={1} sx={{ mt: 1, mb: 1 }}>
         <TextField
           select

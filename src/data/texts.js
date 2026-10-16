@@ -149,6 +149,12 @@ const texts = {
     no_name: "La fila no tiene nombre de carta.",
   },
   EDITION_SAVE_FAILED: "No se pudo guardar la cantidad.",
+  EDITION_VARIATIONS: "Variaciones de estado e idioma",
+  EDITION_VARIATIONS_HINT:
+    "Copias en otro estado o idioma, además de las NM en inglés de la fila.",
+  EDITION_VARIATIONS_TOTAL: "Total con variaciones: ",
+  EDITION_ADD_VARIATION: "Agregar variación",
+  EDITION_VARIATION_IS_DEFAULT: "Elegí un estado o idioma distinto de NM en inglés.",
   EDITION_LOCKED:
     "Las cartas de una caja de edición se cargan con la cantidad de cada una.",
   NEW_STORAGE: "Nuevo contenedor",

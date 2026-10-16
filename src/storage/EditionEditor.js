@@ -10,13 +10,16 @@ import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
+import TuneIcon from "@mui/icons-material/Tune";
 import RemoveIcon from "@mui/icons-material/Remove";
 import texts from "../data/texts";
 import { toast } from "../utils/toast";
 import { accessAPI } from "../utils/fetchFunctions";
 import PreviewCarta from "../elementos/PreviewCarta";
 import { isFoil, finishLabel } from "../utils/finishes";
+import { DEFAULT_CONDITION, DEFAULT_LANGUAGE, gradeLabel } from "../utils/grade";
 import "./binder.css";
 
 // A set runs to several hundred printings and each finish is its own line, so
@@ -120,6 +123,146 @@ function Quantity({ row, max, disabled, onSave }) {
   );
 }
 
+// A native select over one modifier list (conditions or languages).
+function GradeSelect({ label, rows, value, disabled, onChange }) {
+  return (
+    <TextField
+      select
+      size="small"
+      SelectProps={{ native: true }}
+      label={label}
+      value={value}
+      disabled={disabled}
+      onChange={(e) => onChange(parseInt(e.target.value, 10))}
+      sx={{ width: 130 }}
+    >
+      {rows.map((row) => (
+        <option key={row.id} value={row.id}>
+          {row.name}
+        </option>
+      ))}
+    </TextField>
+  );
+}
+
+// The fold-out under a checklist row: its copies that are NOT near-mint
+// English.
+//
+// The row's own counter is the near-mint English copies. Each line here is
+// MORE copies on top of those — "and two Japanese" — so four on the row plus
+// a line of two is six in the box. Changing a line's selects re-labels its
+// copies, and taking it to zero takes them out of the box.
+function Variations({ row, conditions, languages, max, editable, onSet }) {
+  const idOf = (rows, name) => rows.find((r) => r.name === name)?.id ?? "";
+  const defaultCondition = idOf(conditions, DEFAULT_CONDITION);
+  const defaultLanguage = idOf(languages, DEFAULT_LANGUAGE);
+  const isDefault = (c, l) => c === defaultCondition && l === defaultLanguage;
+
+  // The grade the "add" line will create. Starts on the likeliest variation —
+  // a near-mint copy in another language — rather than on near-mint English,
+  // which is not a variation at all.
+  const [newCondition, setNewCondition] = useState(defaultCondition);
+  const [newLanguage, setNewLanguage] = useState(
+    languages.find((l) => l.id !== defaultLanguage)?.id ?? defaultLanguage
+  );
+
+  function add() {
+    if (isDefault(newCondition, newLanguage)) {
+      toast(texts.EDITION_VARIATION_IS_DEFAULT);
+      return;
+    }
+    const same = row.grades.find(
+      (g) => g.conditionid === newCondition && g.languageid === newLanguage
+    );
+    onSet({
+      conditionid: newCondition,
+      languageid: newLanguage,
+      quantity: (same?.quantity ?? 0) + 1,
+    });
+  }
+
+  return (
+    <Box className="editionVariations" sx={{ ml: { xs: 0, sm: "52px" } }}>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+        {texts.EDITION_VARIATIONS_HINT}
+        {/* Once there is something to add up, the sum the row no longer
+            shows on its own. */}
+        {row.grades.length > 0 && (
+          <>
+            {" "}
+            {texts.EDITION_VARIATIONS_TOTAL}
+            <b>{row.quantity}</b>.
+          </>
+        )}
+      </Typography>
+      <Stack spacing={1}>
+        {row.grades.map((g) => (
+          <Stack
+            key={`${g.conditionid}|${g.languageid}`}
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            flexWrap="wrap"
+            useFlexGap
+          >
+            {/* Changing a select moves EVERY copy of this line to the new
+                grade — the shop correcting what the line is, not adding. */}
+            <GradeSelect
+              label={texts.CONDITION}
+              rows={conditions}
+              value={g.conditionid}
+              disabled={!editable}
+              onChange={(conditionid) =>
+                onSet({ conditionid, languageid: g.languageid, quantity: g.quantity, from: g })
+              }
+            />
+            <GradeSelect
+              label={texts.LANGUAGE}
+              rows={languages}
+              value={g.languageid}
+              disabled={!editable}
+              onChange={(languageid) =>
+                onSet({ conditionid: g.conditionid, languageid, quantity: g.quantity, from: g })
+              }
+            />
+            <Quantity
+              row={g}
+              // The cap is on the row's total, every grade together.
+              max={max - (row.quantity - g.quantity)}
+              disabled={!editable}
+              onSave={(quantity, revert) =>
+                onSet(
+                  { conditionid: g.conditionid, languageid: g.languageid, quantity },
+                  revert
+                )
+              }
+            />
+          </Stack>
+        ))}
+        {editable && (
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+            <GradeSelect
+              label={texts.CONDITION}
+              rows={conditions}
+              value={newCondition}
+              onChange={setNewCondition}
+            />
+            <GradeSelect
+              label={texts.LANGUAGE}
+              rows={languages}
+              value={newLanguage}
+              onChange={setNewLanguage}
+            />
+            <Button size="small" startIcon={<AddIcon />} onClick={add}>
+              {texts.EDITION_ADD_VARIATION}
+            </Button>
+          </Stack>
+        )}
+      </Stack>
+    </Box>
+  );
+}
+
 // An edition box, as the set's checklist.
 //
 // Every other container editor lists the copies that are in it. This one lists
@@ -139,6 +282,31 @@ export default function EditionEditor({ unit, editable, onChanged, reloadKey }) 
   const [q, setQ] = useState("");
   const [onlyHeld, setOnlyHeld] = useState(false);
   const [page, setPage] = useState(1);
+  // Rows whose variations fold-out is open, by "<scryfallid>|<variant>".
+  const [open, setOpen] = useState(() => new Set());
+  const [conditions, setConditions] = useState([]);
+  const [languages, setLanguages] = useState([]);
+
+  useEffect(() => {
+    accessAPI(
+      "GET",
+      "card/modifiers",
+      null,
+      (response) => {
+        setConditions(response.conditions ?? []);
+        setLanguages(response.languages ?? []);
+      },
+      (response) => toast(response.message)
+    );
+  }, []);
+
+  const toggle = (key) =>
+    setOpen((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
 
   const load = useCallback(() => {
     accessAPI(
@@ -171,9 +339,15 @@ export default function EditionEditor({ unit, editable, onChanged, reloadKey }) 
       () => {
         setEdition((current) => {
           if (!current) return current;
+          // `quantity` here is the near-mint English count; the row's total
+          // is that plus its variations, which this save did not touch.
           const rows = current.rows.map((other) =>
             other.scryfallid === row.scryfallid && other.variant === row.variant
-              ? { ...other, quantity }
+              ? {
+                  ...other,
+                  plain: quantity,
+                  quantity: other.quantity - other.plain + quantity,
+                }
               : other
           );
           return {
@@ -189,6 +363,35 @@ export default function EditionEditor({ unit, editable, onChanged, reloadKey }) 
       (response) => {
         toast(`${texts.EDITION_SAVE_FAILED} ${response.message}`);
         revert();
+      }
+    );
+  }
+
+  // Set one variation of a row. The row's total and its chips move with it,
+  // so the checklist re-reads afterwards rather than guessing.
+  function saveGrade(row, { conditionid, languageid, quantity, from }, revert) {
+    accessAPI(
+      "PUT",
+      `storage/${unit.id}/edition/grade`,
+      {
+        scryfallid: row.scryfallid,
+        variant: row.variant,
+        conditionid,
+        languageid,
+        quantity,
+        ...(from && {
+          fromconditionid: from.conditionid,
+          fromlanguageid: from.languageid,
+        }),
+      },
+      () => {
+        load();
+        if (onChanged) onChanged();
+      },
+      (response) => {
+        toast(`${texts.EDITION_SAVE_FAILED} ${response.message}`);
+        if (revert) revert();
+        load();
       }
     );
   }
@@ -268,72 +471,113 @@ export default function EditionEditor({ unit, editable, onChanged, reloadKey }) 
       )}
 
       <Stack spacing={0.75}>
-        {visible.map((row) => (
-          <Stack
-            key={`${row.scryfallid}|${row.variant}`}
-            direction="row"
-            spacing={1.5}
-            alignItems="center"
-            className="boxRow"
-            // A row the shop has none of is still worth reading, just quieter
-            // than the ones it does.
-            sx={{ opacity: row.quantity ? 1 : 0.62 }}
-          >
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ width: 40, flexShrink: 0 }}
-            >
-              {row.collectornumber}
-            </Typography>
-            <PreviewCarta
-              image={row.image}
-              name={row.name}
-              small
-              sx={{ width: 38, height: 53, borderRadius: 0.5 }}
-            />
-            {/* Name and finish travel TOGETHER, and this group is the one
-                that stretches. Letting the name stretch on its own pushed the
-                Foil chip across the row to sit beside the quantity, where it
-                read as a label for the number rather than for the card. */}
-            <Stack
-              direction="row"
-              spacing={1}
-              alignItems="center"
-              sx={{ flex: "1 1 160px", minWidth: 0 }}
-            >
-              <Typography noWrap sx={{ fontWeight: 600, minWidth: 0 }}>
-                {row.name}
-              </Typography>
-              {isFoil(row.variant) && (
-                <Chip
-                  size="small"
-                  color="secondary"
-                  label={finishLabel(row.variant)}
-                  sx={{ flexShrink: 0 }}
+        {visible.map((row) => {
+          const key = `${row.scryfallid}|${row.variant}`;
+          const expanded = open.has(key);
+          return (
+            <Box key={key}>
+              <Stack
+                direction="row"
+                spacing={1.5}
+                alignItems="center"
+                className="boxRow"
+                // A row the shop has none of is still worth reading, just quieter
+                // than the ones it does.
+                sx={{ opacity: row.quantity ? 1 : 0.62 }}
+              >
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ width: 40, flexShrink: 0 }}
+                >
+                  {row.collectornumber}
+                </Typography>
+                <PreviewCarta
+                  image={row.image}
+                  name={row.name}
+                  small
+                  sx={{ width: 38, height: 53, borderRadius: 0.5 }}
+                />
+                {/* Name and finish travel TOGETHER, and this group is the one
+                    that stretches. Letting the name stretch on its own pushed the
+                    Foil chip across the row to sit beside the quantity, where it
+                    read as a label for the number rather than for the card. */}
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  sx={{ flex: "1 1 160px", minWidth: 0 }}
+                >
+                  <Typography noWrap sx={{ fontWeight: 600, minWidth: 0 }}>
+                    {row.name}
+                  </Typography>
+                  {isFoil(row.variant) && (
+                    <Chip
+                      size="small"
+                      color="secondary"
+                      label={finishLabel(row.variant)}
+                      sx={{ flexShrink: 0 }}
+                    />
+                  )}
+                  {/* Which of the copies differ, at a glance: "1 Japonés". */}
+                  {row.grades.map((g) => (
+                    <Chip
+                      key={`${g.conditionid}|${g.languageid}`}
+                      size="small"
+                      variant="outlined"
+                      label={`+${g.quantity} ${gradeLabel(g)}`}
+                      sx={{ flexShrink: 0 }}
+                    />
+                  ))}
+                </Stack>
+                {/* Copies promised to a buyer are in a bag on the counter, not in
+                    the box. Said out loud so a count that comes up short reads as
+                    correct rather than as a card gone missing. */}
+                {row.bagged > 0 && (
+                  <Typography variant="caption" color="text.secondary">
+                    {texts.EDITION_BAGGED_1}
+                    {row.bagged}
+                    {texts.EDITION_BAGGED_2}
+                  </Typography>
+                )}
+                <Stack direction="row" alignItems="center" sx={{ ml: "auto" }}>
+                  {/* Only once the lists have arrived: the fold-out is nothing
+                      but selects over them. */}
+                  {conditions.length > 0 && languages.length > 0 && (editable || row.grades.length > 0) && (
+                    <IconButton
+                      size="small"
+                      title={texts.EDITION_VARIATIONS}
+                      aria-label={texts.EDITION_VARIATIONS}
+                      aria-expanded={expanded}
+                      color={expanded || row.grades.length ? "primary" : "default"}
+                      onClick={() => toggle(key)}
+                    >
+                      <TuneIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                  {/* The row's own counter is its near-mint English copies;
+                      the variations add to it (see Variations). */}
+                  <Quantity
+                    row={{ quantity: row.plain }}
+                    max={edition.max - (row.quantity - row.plain)}
+                    disabled={!editable}
+                    onSave={(quantity, revert) => save(row, quantity, revert)}
+                  />
+                </Stack>
+              </Stack>
+              {expanded && (
+                <Variations
+                  row={row}
+                  conditions={conditions}
+                  languages={languages}
+                  max={edition.max}
+                  editable={editable}
+                  onSet={(change, revert) => saveGrade(row, change, revert)}
                 />
               )}
-            </Stack>
-            {/* Copies promised to a buyer are in a bag on the counter, not in
-                the box. Said out loud so a count that comes up short reads as
-                correct rather than as a card gone missing. */}
-            {row.bagged > 0 && (
-              <Typography variant="caption" color="text.secondary">
-                {texts.EDITION_BAGGED_1}
-                {row.bagged}
-                {texts.EDITION_BAGGED_2}
-              </Typography>
-            )}
-            <Box sx={{ ml: "auto" }}>
-              <Quantity
-                row={row}
-                max={edition.max}
-                disabled={!editable}
-                onSave={(quantity, revert) => save(row, quantity, revert)}
-              />
             </Box>
-          </Stack>
-        ))}
+          );
+        })}
       </Stack>
 
       {pageCount > 1 && (
