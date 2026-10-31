@@ -15,6 +15,7 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import Table from "@mui/material/Table";
@@ -70,17 +71,23 @@ const SECTIONS = [
   { key: "away", title: texts.STORAGE_AWAY, states: ["released"] },
 ];
 
+// Rows per page in each section. Fixed: there is no selector.
+const PAGE_SIZE = 10;
+
 export default function Storage() {
-  const [loader, setLoader] = useState(true);
-  const [units, setUnits] = useState([]);
-  const [total, setTotal] = useState(0);
   // Search, sort and paging all live server-side: a wall of binders should
-  // not travel whole on every visit.
+  // not travel whole on every visit. Each section is fetched and paged on its
+  // own — one shared page split across sections hid whatever fell past it.
+  // `lists` is section key → { units, total }, filled as each one answers;
+  // `paging` is section key → zero-based page.
+  const [lists, setLists] = useState({});
+  const [paging, setPaging] = useState(() =>
+    Object.fromEntries(SECTIONS.map(({ key }) => [key, 0]))
+  );
   const [q, setQ] = useState("");
   const [sort, setSort] = useState("name");
   const [dir, setDir] = useState("asc");
-  const [page, setPage] = useState(0);
-  const [limit, setLimit] = useState(25);
+  const loader = !SECTIONS.every(({ key }) => lists[key]);
   // The sidebar: null, {mode:"create"} or {mode:"edit", unit}.
   const [panel, setPanel] = useState(null);
   // The open per-row actions menu: {anchor, unit} or null.
@@ -113,27 +120,51 @@ export default function Storage() {
     navigate("/login");
   }
 
-  function load() {
+  function loadSection({ key, states }, page) {
     accessAPI(
       "GET",
-      `storage?page=${page + 1}&limit=${limit}&sort=${sort}&dir=${dir}` +
+      `storage?state=${states.join(",")}&page=${page + 1}&limit=${PAGE_SIZE}` +
+        `&sort=${sort}&dir=${dir}` +
         (q.trim() ? `&q=${encodeURIComponent(q.trim())}` : ""),
       null,
       (response) => {
-        setUnits(response.units ?? []);
-        setTotal(response.total ?? 0);
-        setLoader(false);
+        const units = response.units ?? [];
+        const total = response.total ?? 0;
+        // Moving the last row off the last page leaves that page empty;
+        // step back to what is now the last one instead of showing nothing.
+        if (!units.length && page > 0) {
+          const back = Math.max(Math.ceil(total / PAGE_SIZE) - 1, 0);
+          setPaging((prev) => ({ ...prev, [key]: back }));
+          loadSection({ key, states }, back);
+          return;
+        }
+        setLists((prev) => ({ ...prev, [key]: { units, total } }));
       },
       bail
     );
   }
 
+  // Every section, at the page each is on. Called after any change that can
+  // move a container from one section to another.
+  function load() {
+    SECTIONS.forEach((s) => loadSection(s, paging[s.key]));
+  }
+
+  function changePage(section, next) {
+    setPaging((prev) => ({ ...prev, [section.key]: next }));
+    loadSection(section, next);
+  }
+
+  // A new search or sort starts every section back on its first page.
   // Typing searches after a pause, not per keystroke.
   useEffect(() => {
-    const timer = setTimeout(load, q ? 300 : 0);
+    const timer = setTimeout(() => {
+      setPaging(Object.fromEntries(SECTIONS.map(({ key }) => [key, 0])));
+      SECTIONS.forEach((s) => loadSection(s, 0));
+    }, q ? 300 : 0);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, sort, dir, page, limit]);
+  }, [q, sort, dir]);
 
   // The customer roster for the owner picker — clients only; the shop is a
   // separate option in the form.
@@ -190,7 +221,6 @@ export default function Storage() {
       setSort(column);
       setDir("asc");
     }
-    setPage(0);
   }
 
   // Always the shop's own furniture — a customer's container is created by
@@ -329,10 +359,16 @@ export default function Storage() {
     return actions;
   }
 
-  function section(title, rows) {
-    if (!rows.length) return null;
+  // `index` counts only the sections being shown, so the divider goes
+  // between two of them and never above the first.
+  function section(def, index) {
+    const { key, title } = def;
+    const rows = lists[key].units;
+    const total = lists[key].total;
+    const page = paging[key];
     return (
-      <div key={title}>
+      <div key={key}>
+        {index > 0 && <Divider sx={{ mt: 3, borderBottomWidth: 3 }} />}
         <Typography variant="subtitle1" sx={{ mt: 3, mb: 0.5, fontWeight: 700 }}>
           {title}
         </Typography>
@@ -420,6 +456,19 @@ export default function Storage() {
             </TableBody>
           </Table>
         </TableContainer>
+        {total > PAGE_SIZE && (
+          <TablePagination
+            component="div"
+            count={total}
+            page={page}
+            onPageChange={(e, next) => changePage(def, next)}
+            rowsPerPage={PAGE_SIZE}
+            rowsPerPageOptions={[]}
+            labelDisplayedRows={({ from, to, count }) =>
+              `${from}–${to} ${texts.OF} ${count}`
+            }
+          />
+        )}
       </div>
     );
   }
@@ -444,40 +493,16 @@ export default function Storage() {
             size="small"
             placeholder={texts.STORAGE_SEARCH}
             value={q}
-            onChange={(e) => {
-              setQ(e.target.value);
-              setPage(0);
-            }}
+            onChange={(e) => setQ(e.target.value)}
             sx={{ mb: 1, width: 320, maxWidth: "100%" }}
           />
 
-          {!units.length && (
+          {SECTIONS.every(({ key }) => !lists[key].total) && (
             <Typography color="text.secondary" sx={{ mt: 2 }}>
               {q ? texts.STORAGE_NO_MATCHES : texts.NO_CONTAINERS}
             </Typography>
           )}
-          {SECTIONS.map(({ title, states }) =>
-            section(
-              title,
-              units.filter((u) => states.includes(u.state))
-            )
-          )}
-
-          {total > limit && (
-            <TablePagination
-              component="div"
-              count={total}
-              page={page}
-              onPageChange={(e, next) => setPage(next)}
-              rowsPerPage={limit}
-              onRowsPerPageChange={(e) => {
-                setLimit(parseInt(e.target.value, 10));
-                setPage(0);
-              }}
-              rowsPerPageOptions={[25, 50, 100]}
-              labelRowsPerPage={texts.PER_PAGE}
-            />
-          )}
+          {SECTIONS.filter(({ key }) => lists[key].total).map(section)}
         </div>
       )}
 

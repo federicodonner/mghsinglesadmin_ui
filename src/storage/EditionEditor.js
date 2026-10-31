@@ -266,8 +266,8 @@ function Variations({ row, conditions, languages, max, editable, onSet }) {
 // An edition box, as the set's checklist.
 //
 // Every other container editor lists the copies that are in it. This one lists
-// the SET — every paper printing, every finish it came in, in collector-number
-// order — and the shop says how many of each it has. A card the shop has none
+// the SET — every paper printing, every finish it came in, in the order chosen
+// for the box — and the shop says how many of each it has. A card the shop has none
 // of is not missing from the page; it is a zero, which is the row somebody
 // filling the box is actually looking for.
 //
@@ -367,6 +367,21 @@ export default function EditionEditor({ unit, editable, onChanged, reloadKey }) 
     );
   }
 
+  // The order belongs to the box, so it is saved rather than a view setting.
+  // The API does the sorting; re-read to get the rows in the new order.
+  function changeOrder(order) {
+    accessAPI(
+      "PUT",
+      `storage/${unit.id}/edition/order`,
+      { order },
+      () => {
+        setPage(1);
+        load();
+      },
+      (response) => toast(response.message)
+    );
+  }
+
   // Set one variation of a row. The row's total and its chips move with it,
   // so the checklist re-reads afterwards rather than guessing.
   function saveGrade(row, { conditionid, languageid, quantity, from }, revert) {
@@ -451,6 +466,19 @@ export default function EditionEditor({ unit, editable, onChanged, reloadKey }) 
           }
           label={texts.EDITION_ONLY_HELD}
         />
+        <TextField
+          select
+          size="small"
+          SelectProps={{ native: true }}
+          label={texts.EDITION_ORDER}
+          value={edition.order}
+          disabled={!editable}
+          onChange={(e) => changeOrder(e.target.value)}
+          sx={{ width: 240, flexShrink: 0 }}
+        >
+          <option value="collector">{texts.EDITION_ORDER_COLLECTOR}</option>
+          <option value="color_mana">{texts.EDITION_ORDER_COLOR_MANA}</option>
+        </TextField>
         {/* How full the box is — the one number a set box is judged by. */}
         <Typography variant="body2" color="text.secondary">
           {edition.distinct}

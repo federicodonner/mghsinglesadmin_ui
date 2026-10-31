@@ -4,6 +4,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
 import Button from "@mui/material/Button";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -63,6 +66,8 @@ export default function StorageDetail() {
   // a full binder takes a few seconds, and a page that says nothing reads
   // as a click that did nothing.
   const [importing, setImporting] = useState(false);
+  // The element the Title's actions menu hangs from, while it is open.
+  const [actionsAnchor, setActionsAnchor] = useState(null);
   // An edition box's import reports, once it finishes, the cards it could
   // not file and why — a list, not a count, because each one is a card the
   // shop has to deal with by hand.
@@ -72,6 +77,27 @@ export default function StorageDetail() {
 
   // Read the picked CSV and hand it to the API, which maps rows to pockets
   // (empty lines skip one) and keeps the file's condition and language.
+  // Comes back as text and leaves as a file: the browser has no other way to
+  // save something fetched with an Authorization header.
+  function exportCollection() {
+    setActionsAnchor(null);
+    accessAPI(
+      "GET",
+      `storage/${unit.id}/export`,
+      null,
+      ({ csv }) => {
+        const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${unit.name}.csv`;
+        link.click();
+        // Not straight away: Safari cancels a download whose URL goes first.
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      },
+      (response) => toast(response.message)
+    );
+  }
+
   async function importCollection(e) {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -306,30 +332,44 @@ export default function StorageDetail() {
                 // Adding follows physical possession, like arranging: a
                 // customer walking in with more cards for their consigned
                 // binder hands them over the counter. An edition box has no
-                // per-card add — its checklist is how cards go in and out —
-                // but it does import, once its set is known: the file is
-                // read by card name only and filed into that set.
-                isEdition
-                  ? unit.editable && unit.cardsetcode
-                    ? [
-                        {
-                          label: texts.IMPORT_COLLECTION,
-                          onClick: () =>
-                            !importing && importRef.current?.click(),
-                        },
-                      ]
-                    : []
-                  : unit.arrangeable
-                  ? [
-                      { label: texts.ADD_CARD, onClick: () => setAdding(true) },
-                      {
-                        label: texts.IMPORT_COLLECTION,
-                        onClick: () => !importing && importRef.current?.click(),
-                      },
-                    ]
+                // per-card add — its checklist is how cards go in and out.
+                !isEdition && unit.arrangeable
+                  ? [{ label: texts.ADD_CARD, onClick: () => setAdding(true) }]
                   : []
               }
-            />
+            >
+              <Button
+                size="small"
+                endIcon={<ArrowDropDownIcon />}
+                onClick={(e) => setActionsAnchor(e.currentTarget)}
+              >
+                {texts.ACTIONS}
+              </Button>
+              <Menu
+                anchorEl={actionsAnchor}
+                open={Boolean(actionsAnchor)}
+                onClose={() => setActionsAnchor(null)}
+              >
+                {/* Importing follows the same rule as adding, and an edition
+                    box does import, once its set is known: the file is read
+                    by card name only and filed into that set. Exporting
+                    changes nothing, so it is always on offer. */}
+                {(isEdition
+                  ? unit.editable && unit.cardsetcode
+                  : unit.arrangeable) && (
+                  <MenuItem
+                    disabled={importing}
+                    onClick={() => {
+                      setActionsAnchor(null);
+                      importRef.current?.click();
+                    }}
+                  >
+                    {texts.IMPORT_COLLECTION}
+                  </MenuItem>
+                )}
+                <MenuItem onClick={exportCollection}>{texts.EXPORT_CSV}</MenuItem>
+              </Menu>
+            </Title>
 
             {/* Working, said out loud: the import processes card by card
                 and a big scan takes seconds. */}

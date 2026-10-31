@@ -140,9 +140,11 @@ export default function Login() {
                 </Stack>
               </form>
             </div>
+            {/* Hidden until password recovery exists: the button does nothing.
             <Button variant="text" className="forgot">
               {texts.FORGOT_PASSWORD}
             </Button>
+            */}
           </div>
         )}
       </div>
