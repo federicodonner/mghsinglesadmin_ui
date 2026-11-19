@@ -5,7 +5,6 @@ import Chip from "@mui/material/Chip";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
 import LinearProgress from "@mui/material/LinearProgress";
-import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
@@ -18,14 +17,16 @@ import texts from "../data/texts";
 import { toast } from "../utils/toast";
 import { accessAPI } from "../utils/fetchFunctions";
 import PreviewCarta from "../elementos/PreviewCarta";
+import CardPager from "./CardPager";
 import { isFoil, finishLabel } from "../utils/finishes";
 import { DEFAULT_CONDITION, DEFAULT_LANGUAGE, gradeLabel } from "../utils/grade";
 import "./binder.css";
 
 // A set runs to several hundred printings and each finish is its own line, so
 // the whole checklist is well past what one screen — or one comfortable DOM —
-// should hold. Fifty rows is a screenful of scrolling and no more.
-const PAGE_SIZE = 50;
+// should hold. Fifty rows is a screenful of scrolling and no more, so a page
+// starts there; the other sizes are for whoever wants less or more.
+const PAGE_SIZES = [25, 50, 100, 200];
 
 // How long to wait after the last keystroke before saving a typed quantity.
 // Long enough that typing "12" is one save rather than a save of 1 and a save
@@ -282,6 +283,7 @@ export default function EditionEditor({ unit, editable, onChanged, reloadKey }) 
   const [q, setQ] = useState("");
   const [onlyHeld, setOnlyHeld] = useState(false);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZES[1]);
   // Rows whose variations fold-out is open, by "<scryfallid>|<variant>".
   const [open, setOpen] = useState(() => new Set());
   const [conditions, setConditions] = useState([]);
@@ -431,9 +433,9 @@ export default function EditionEditor({ unit, editable, onChanged, reloadKey }) 
 
   // Clamped rather than reset, so filtering down does not throw away the
   // position of somebody working through the box page by page.
-  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
   const curPage = Math.min(page, pageCount);
-  const visible = rows.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
+  const visible = rows.slice((curPage - 1) * pageSize, curPage * pageSize);
 
   return (
     <>
@@ -608,14 +610,18 @@ export default function EditionEditor({ unit, editable, onChanged, reloadKey }) 
         })}
       </Stack>
 
-      {pageCount > 1 && (
-        <Pagination
-          count={pageCount}
-          page={curPage}
-          onChange={(e, next) => setPage(next)}
-          sx={{ display: "flex", justifyContent: "center", my: 1.5 }}
-        />
-      )}
+      <CardPager
+        total={rows.length}
+        page={curPage}
+        pageCount={pageCount}
+        onPageChange={setPage}
+        size={pageSize}
+        sizes={PAGE_SIZES}
+        onSizeChange={(size) => {
+          setPageSize(size);
+          setPage(1);
+        }}
+      />
     </>
   );
 }

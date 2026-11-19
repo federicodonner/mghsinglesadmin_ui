@@ -71,18 +71,22 @@ const SECTIONS = [
   { key: "away", title: texts.STORAGE_AWAY, states: ["released"] },
 ];
 
-// Rows per page in each section. Fixed: there is no selector.
-const PAGE_SIZE = 10;
+// Rows per page each section can show, the first being where it starts.
+const PAGE_SIZES = [10, 25, 50];
 
 export default function Storage() {
   // Search, sort and paging all live server-side: a wall of binders should
   // not travel whole on every visit. Each section is fetched and paged on its
   // own — one shared page split across sections hid whatever fell past it.
   // `lists` is section key → { units, total }, filled as each one answers;
-  // `paging` is section key → zero-based page.
+  // `paging` is section key → zero-based page, `sizes` section key → rows
+  // per page.
   const [lists, setLists] = useState({});
   const [paging, setPaging] = useState(() =>
     Object.fromEntries(SECTIONS.map(({ key }) => [key, 0]))
+  );
+  const [sizes, setSizes] = useState(() =>
+    Object.fromEntries(SECTIONS.map(({ key }) => [key, PAGE_SIZES[0]]))
   );
   const [q, setQ] = useState("");
   const [sort, setSort] = useState("name");
@@ -120,10 +124,10 @@ export default function Storage() {
     navigate("/login");
   }
 
-  function loadSection({ key, states }, page) {
+  function loadSection({ key, states }, page, size = sizes[key]) {
     accessAPI(
       "GET",
-      `storage?state=${states.join(",")}&page=${page + 1}&limit=${PAGE_SIZE}` +
+      `storage?state=${states.join(",")}&page=${page + 1}&limit=${size}` +
         `&sort=${sort}&dir=${dir}` +
         (q.trim() ? `&q=${encodeURIComponent(q.trim())}` : ""),
       null,
@@ -133,9 +137,9 @@ export default function Storage() {
         // Moving the last row off the last page leaves that page empty;
         // step back to what is now the last one instead of showing nothing.
         if (!units.length && page > 0) {
-          const back = Math.max(Math.ceil(total / PAGE_SIZE) - 1, 0);
+          const back = Math.max(Math.ceil(total / size) - 1, 0);
           setPaging((prev) => ({ ...prev, [key]: back }));
-          loadSection({ key, states }, back);
+          loadSection({ key, states }, back, size);
           return;
         }
         setLists((prev) => ({ ...prev, [key]: { units, total } }));
@@ -153,6 +157,13 @@ export default function Storage() {
   function changePage(section, next) {
     setPaging((prev) => ({ ...prev, [section.key]: next }));
     loadSection(section, next);
+  }
+
+  // A new page size starts the section back on its first page.
+  function changeSize(section, size) {
+    setSizes((prev) => ({ ...prev, [section.key]: size }));
+    setPaging((prev) => ({ ...prev, [section.key]: 0 }));
+    loadSection(section, 0, size);
   }
 
   // A new search or sort starts every section back on its first page.
@@ -456,14 +467,18 @@ export default function Storage() {
             </TableBody>
           </Table>
         </TableContainer>
-        {total > PAGE_SIZE && (
+        {total > PAGE_SIZES[0] && (
           <TablePagination
             component="div"
             count={total}
             page={page}
             onPageChange={(e, next) => changePage(def, next)}
-            rowsPerPage={PAGE_SIZE}
-            rowsPerPageOptions={[]}
+            rowsPerPage={sizes[def.key]}
+            onRowsPerPageChange={(e) =>
+              changeSize(def, parseInt(e.target.value, 10))
+            }
+            rowsPerPageOptions={PAGE_SIZES}
+            labelRowsPerPage={texts.PER_PAGE}
             labelDisplayedRows={({ from, to, count }) =>
               `${from}–${to} ${texts.OF} ${count}`
             }

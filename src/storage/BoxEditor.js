@@ -16,19 +16,20 @@ import { CSS } from "@dnd-kit/utilities";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
-import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import texts from "../data/texts";
 import PreviewCarta from "../elementos/PreviewCarta";
+import CardPager from "./CardPager";
 import { isFoil, finishLabel } from "../utils/finishes";
 import { gradeParts } from "../utils/grade";
 import "./binder.css";
 
 // A box holds hundreds of copies, and a single endless list makes the page
 // heavy and the scrollbar useless. Ten rows fit on a screen without
-// scrolling, so the pager is the only thing to reach for.
-const PAGE_SIZE = 10;
+// scrolling, so a page starts at ten; the larger sizes are for working
+// through a long box without paging.
+const PAGE_SIZES = [10, 25, 50, 100];
 
 // One row of a box.
 function Row({ card, sortable, mutate, withdrawable, onDuplicate, onRemove, onWithdraw, onEditVersion, position }) {
@@ -176,10 +177,11 @@ export default function BoxEditor({
   // Clamped rather than reset: removing the last card of the last page must
   // land on the (new) last page, not jump back to the first.
   const [page, setPage] = useState(1);
-  const pageCount = Math.max(1, Math.ceil(cards.length / PAGE_SIZE));
+  const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
+  const pageCount = Math.max(1, Math.ceil(cards.length / pageSize));
   const curPage = Math.min(page, pageCount);
-  const offset = (curPage - 1) * PAGE_SIZE;
-  const visible = cards.slice(offset, offset + PAGE_SIZE);
+  const offset = (curPage - 1) * pageSize;
+  const visible = cards.slice(offset, offset + pageSize);
 
   function handleDragEnd(event) {
     const { active, over } = event;
@@ -215,12 +217,18 @@ export default function BoxEditor({
     </Stack>
   );
 
-  const pager = pageCount > 1 && (
-    <Pagination
-      count={pageCount}
+  const pager = (
+    <CardPager
+      total={cards.length}
       page={curPage}
-      onChange={(e, next) => setPage(next)}
-      sx={{ display: "flex", justifyContent: "center", my: 1.5 }}
+      pageCount={pageCount}
+      onPageChange={setPage}
+      size={pageSize}
+      sizes={PAGE_SIZES}
+      onSizeChange={(size) => {
+        setPageSize(size);
+        setPage(1);
+      }}
     />
   );
 
