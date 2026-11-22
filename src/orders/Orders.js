@@ -8,7 +8,7 @@ import texts from "../data/texts";
 // The shared "where the card is" line — a private copy here used to
 // drift, and had no case for an edition box at all.
 import { locationLabel } from "../utils/locationLabel";
-import { accessAPI, logout } from "../utils/fetchFunctions";
+import { accessAPI, logout, sessionEnded } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
 import { gradeParts } from "../utils/grade";
 import {
@@ -65,8 +65,10 @@ export default function Orders() {
 
   function bail(response) {
     toast(response.message);
-    logout();
-    navigate("/login");
+    if (sessionEnded(response)) {
+      logout();
+      navigate("/login");
+    }
   }
 
   function load() {

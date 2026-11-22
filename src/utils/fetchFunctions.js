@@ -38,6 +38,16 @@ export function logout() {
   localStorage.removeItem(process.env.REACT_APP_LS_LOGIN_TOKEN);
 }
 
+// Whether a failed API call means the session itself is gone (expired or
+// revoked token, or an account without the role for this page). Only then
+// should a screen log the user out. Anything else — a 429 rate limit, a 500,
+// a timeout — is transient: show the message and keep the session, otherwise
+// one throttled request kicks staff out mid-work and the forced re-login burns
+// even more of the budget.
+export function sessionEnded(response) {
+  return response?.status === 401 || response?.status === 403;
+}
+
 // Access API
 // With timeout specified in .env
 // `options.timeout` overrides the configured request timeout for calls that
@@ -81,10 +91,13 @@ export function accessAPI(verb, endpoint, data, callbackSuccess, callbackFail, o
           callbackSuccess(data);
         });
       } else {
-        response.json().then((data) => {
-          data.status = response.status;
-          callbackFail(data);
-        });
+        response
+          .json()
+          .catch(() => ({ message: texts.API_ERROR }))
+          .then((data) => {
+            data.status = response.status;
+            callbackFail(data);
+          });
       }
     })
     .catch((e) => {

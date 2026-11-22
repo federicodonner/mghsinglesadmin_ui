@@ -3,7 +3,8 @@ import Header from "../header/Header";
 import Loader from "../loader/Loader";
 import { useNavigate } from "react-router-dom";
 import "./home.css";
-import { accessAPI, logout } from "../utils/fetchFunctions";
+import { accessAPI, logout, sessionEnded } from "../utils/fetchFunctions";
+import { toast } from "../utils/toast";
 import MatchQueue from "../orders/MatchQueue";
 import PrepareQueue from "../orders/PrepareQueue";
 import RefileQueue from "../orders/RefileQueue";
@@ -40,8 +41,13 @@ export default function Home() {
       null,
       () => markReady("me"),
       (response) => {
-        logout();
-        navigate("login");
+        if (sessionEnded(response)) {
+          logout();
+          navigate("login");
+        } else {
+          toast(response.message);
+          markReady("me");
+        }
       }
     );
   }, [navigate]);

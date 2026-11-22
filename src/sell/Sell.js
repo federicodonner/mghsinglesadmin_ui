@@ -8,7 +8,7 @@ import CardNameAutocomplete from "../elementos/CardNameAutocomplete";
 import Loader from "../loader/Loader";
 import "./sell.css";
 import "../orders/orders.css";
-import { accessAPI, logout } from "../utils/fetchFunctions";
+import { accessAPI, logout, sessionEnded } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
 import { gradeParts } from "../utils/grade";
 import { locationLabel } from "../utils/locationLabel";
@@ -48,9 +48,14 @@ export default function Sell() {
       "admin/me",
       null,
       () => setLoggedIn(true),
-      () => {
-        logout();
-        navigate("/");
+      (response) => {
+        if (sessionEnded(response)) {
+          logout();
+          navigate("/");
+        } else {
+          toast(response.message);
+          setLoggedIn(true);
+        }
       }
     );
     accessAPI(

@@ -6,7 +6,7 @@ import Loader from "../loader/Loader";
 import SideForm from "../elementos/SideForm";
 import { useNavigate } from "react-router-dom";
 import texts from "../data/texts";
-import { accessAPI, logout } from "../utils/fetchFunctions";
+import { accessAPI, logout, sessionEnded } from "../utils/fetchFunctions";
 import {
   useExchangeRate,
   formatPesos,
@@ -277,9 +277,11 @@ export default function Users() {
   }
 
   useEffect(() => {
-    accessAPI("GET", "admin/me", null, () => {}, () => {
-      logout();
-      navigate("/login");
+    accessAPI("GET", "admin/me", null, () => {}, (response) => {
+      if (sessionEnded(response)) {
+        logout();
+        navigate("/login");
+      }
     });
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps

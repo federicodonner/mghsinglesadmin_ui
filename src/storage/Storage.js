@@ -7,7 +7,7 @@ import Title from "../elementos/Title";
 import SideForm from "../elementos/SideForm";
 import Loader from "../loader/Loader";
 import texts from "../data/texts";
-import { accessAPI, logout } from "../utils/fetchFunctions";
+import { accessAPI, logout, sessionEnded } from "../utils/fetchFunctions";
 import "./storage.css";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
@@ -120,8 +120,10 @@ export default function Storage() {
 
   function bail(response) {
     toast(response.message);
-    logout();
-    navigate("/login");
+    if (sessionEnded(response)) {
+      logout();
+      navigate("/login");
+    }
   }
 
   function loadSection({ key, states }, page, size = sizes[key]) {

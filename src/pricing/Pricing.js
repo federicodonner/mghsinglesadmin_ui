@@ -8,7 +8,7 @@ import Loader from "../loader/Loader";
 import { useNavigate } from "react-router-dom";
 import texts from "../data/texts";
 import PreviewCarta from "../elementos/PreviewCarta";
-import { accessAPI, logout } from "../utils/fetchFunctions";
+import { accessAPI, logout, sessionEnded } from "../utils/fetchFunctions";
 import { isFoil, finishLabel } from "../utils/finishes";
 import "./pricing.css";
 import Box from "@mui/material/Box";
@@ -90,8 +90,12 @@ export default function Pricing() {
       },
       (response) => {
         toast(response.message);
-        logout();
-        navigate("/login");
+        if (sessionEnded(response)) {
+          logout();
+          navigate("/login");
+        } else {
+          setLoader(false);
+        }
       }
     );
     loadFixed();
