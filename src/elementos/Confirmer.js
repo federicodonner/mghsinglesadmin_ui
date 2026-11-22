@@ -13,11 +13,17 @@ import { setConfirmListener } from "../utils/confirm";
 // "no" — the safe answer to a question that was not answered.
 export default function Confirmer() {
   const [asking, setAsking] = useState(null);
+  // Open/closed is separate from the question itself: the dialog fades out
+  // after an answer, and clearing the question at once made it fade out
+  // blank, with the default button labels flashing in. The question stays
+  // until the next one replaces it.
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     setConfirmListener(
       (message) =>
         new Promise((resolve) => {
+          setOpen(true);
           setAsking({ message, resolve });
         })
     );
@@ -25,15 +31,16 @@ export default function Confirmer() {
   }, []);
 
   function answer(value) {
+    if (!open) return;
     asking?.resolve(value);
-    setAsking(null);
+    setOpen(false);
   }
 
   return (
     // Top of the stacking order (dialogs < side forms < card zoom < this):
     // a question that needs answering must never open behind anything.
     <Dialog
-      open={Boolean(asking)}
+      open={open}
       onClose={() => answer(false)}
       sx={{ zIndex: (theme) => theme.zIndex.modal + 3 }}
     >
