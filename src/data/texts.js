@@ -295,7 +295,7 @@ const texts = {
   NO_MATCHES: "No hay cartas para apartar.",
   PREPARE_TITLE: "Pedidos para preparar",
   PREPARE_HINT:
-    "Pedidos que los clientes confirmaron desde su carrito. Buscá cada carta y apartala; cuando estén todas, el pedido queda listo para retirar.",
+    "Cartas que los clientes confirmaron desde su carrito. Buscá cada una y apartala: pasa a la bolsa del cliente en Pedidos, lista para retirar.",
   NO_PREPARE: "No hay pedidos para preparar.",
   SET_ASIDE: "Apartar",
   WHERE_IS_IT: "Dónde está",
@@ -345,7 +345,12 @@ const texts = {
   CREDIT_AVAILABLE: "Crédito disponible:",
   CREDIT_USED: "Crédito usado:",
   CASH_DUE: "Efectivo a cobrar:",
-  CONFIRM_CANCEL_ORDER: "¿Cancelar este pedido? Las cartas volverán a estar disponibles.",
+  CONFIRM_CANCEL_ORDER:
+    "¿Cancelar este pedido? Las cartas apartadas volverán a estar disponibles. Las que faltan separar siguen reservadas.",
+  WAITING_TO_SEPARATE: (n) =>
+    n === 1
+      ? "1 carta más todavía por separar en Inicio (no se cobra ni se entrega)."
+      : `${n} cartas más todavía por separar en Inicio (no se cobran ni se entregan).`,
   NO_ORDERS: "No hay pedidos.",
   SHOW_ALL: "Ver todos",
   SHOW_PENDING: "Ver solo reservados",

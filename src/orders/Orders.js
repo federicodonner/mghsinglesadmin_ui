@@ -170,6 +170,9 @@ export default function Orders() {
     );
   }
 
+  // A pending bag lists only the cards already separated: the API leaves out
+  // copies still on Home's prepare queue (counted in `waiting`), and bags
+  // with nothing separated yet are not listed at all.
   const shown = pendingOnly
     ? orders.filter((order) => order.status === "pending")
     : orders;
@@ -271,6 +274,14 @@ export default function Orders() {
                   </div>
                 ))}
               </div>
+
+              {/* More of this customer's cards are still to separate on Home.
+                  They are not part of this pick-up until somebody pulls them. */}
+              {order.status === "pending" && order.waiting > 0 && (
+                <div className="pickupNote">
+                  {texts.WAITING_TO_SEPARATE(order.waiting)}
+                </div>
+              )}
 
               {/* Only a live reservation can be acted on. */}
               {order.status === "pending" && (
